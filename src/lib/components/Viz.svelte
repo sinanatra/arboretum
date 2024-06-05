@@ -22,10 +22,9 @@
     function plotCircles() {
         if (!data || !svg) return;
 
-        const svgElement = d3.select(svg);
-        svgElement.selectAll("*").remove();
-        const svgWidth = svgElement.node().clientWidth;
-        const svgHeight = svgElement.node().clientHeight;
+        const svgWidth = svg.clientWidth;
+        const svgHeight = svg.clientHeight;
+
         const centerX = svgWidth / 2;
         const centerY = svgHeight / 2;
 
