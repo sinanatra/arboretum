@@ -1,1 +1,33 @@
-<h1>Hello there</h1>
+<script>
+    import { onMount } from "svelte";
+    import Header from "@components/Header.svelte";
+    import Viz from "@components/Viz.svelte";
+    import * as d3 from "d3";
+
+    let data = [];
+    let viewType = "Geo";
+
+    onMount(async () => {
+        const response = await fetch("Arnarb_sample.csv");
+        const csvData = await response.text();
+        data = d3.csvParse(csvData);
+        console.log(data);
+    });
+
+    function changeViewType(type) {
+        viewType = type;
+    }
+</script>
+
+<div>
+    <Header on:changeViewType={(event) => changeViewType(event.detail)} />
+    {#if data.length > 0}
+        <Viz {data} {viewType} />
+    {/if}
+</div>
+
+<style>
+    :global(body) {
+        background: black;
+    }
+</style>
