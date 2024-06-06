@@ -1,20 +1,18 @@
 <script>
     import { onMount } from "svelte";
-    import { select } from "d3-selection";
-    import { zoom, zoomIdentity } from "d3-zoom";
-    import { range } from "d3-array";
-    import {
-        forceSimulation,
-        forceCollide,
-        forceCenter,
-        forceX,
-        forceY,
-    } from "d3-force";
+    import * as d3 from "d3";
 
     export let data;
     export let viewType;
 
     let svg;
+    let width;
+    let height;
+    let transform = d3.zoomIdentity;
+    let simulation;
+    let nodes;
+    let scalingFactor;
+    let centerX, centerY;
 
     const classColorMapping = {
         Eudicot: "#09c",
@@ -24,56 +22,46 @@
         Pinopsida: "#c66",
     };
 
+    const baseRadius = 50;
+    const ringThickness = 1;
+    const ringSpacing = 3;
+    const reducedRingThickness = ringThickness * 0.05;
+    const reducedRingSpacing = ringSpacing * 1;
+    const reducedBaseRadius = baseRadius * 0.4;
+
     function getColorForClass(className) {
         return classColorMapping[className] || "#000";
     }
 
-    function plotCircles() {
-        if (!data || !svg) return;
+    function getCoordinates() {
+        if (!data) return [];
 
-        const svgElement = select(svg);
-        svgElement.selectAll("*").remove();
+        centerX = svg?.clientWidth / 2;
+        centerY = svg?.clientHeight / 2;
 
-        const svgWidth = svg.clientWidth;
-        const svgHeight = svg.clientHeight;
-
-        const centerX = svgWidth / 2;
-        const centerY = svgHeight / 2;
-
-        const baseRadius = 50;
-        const ringThickness = 1;
-        const ringSpacing = 3;
-        const reducedRingThickness = ringThickness * 0.05;
-        const reducedRingSpacing = ringSpacing * 1;
-        const reducedBaseRadius = baseRadius * 0.4;
-
-        const g = svgElement
-            .append("g")
-            .attr("transform", `translate(${centerX}, ${centerY})`);
-
-        const zoomBehavior = zoom()
+        const zoom = d3
+            .zoom()
             .scaleExtent([0.01, 10])
             .on("zoom", (event) => {
-                g.attr("transform", event.transform);
+                transform = event.transform;
+                d3.select(svg).select("g").attr("transform", transform);
             });
 
-        svgElement.call(zoomBehavior);
-        svgElement.call(
-            zoomBehavior.transform,
-            zoomIdentity.translate(centerX, centerY).scale(0.01),
-        );
+        d3.select(svg)
+            .call(zoom)
+            .call(
+                zoom.transform,
+                d3.zoomIdentity.translate(centerX, centerY).scale(0.01),
+            );
 
-        let xColumn, yColumn;
-        if (viewType === "UMAP") {
-            xColumn = "UMAP_1";
-            yColumn = "UMAP_2";
-        } else if (viewType === "Geo") {
-            xColumn = "geo_1";
-            yColumn = "geo_2";
-        } else if (viewType === "Rad") {
-            xColumn = "Scaled_Rad_1";
-            yColumn = "Scaled_Rad_2";
-        }
+        const columns = {
+            UMAP: ["UMAP_1", "UMAP_2"],
+            Geo: ["geo_1", "geo_2"],
+            Rad: ["Scaled_Rad_1", "Scaled_Rad_2"],
+        };
+
+        const [xColumn, yColumn] = columns[viewType] || [];
+        if (!xColumn || !yColumn) return [];
 
         const xValues = data
             .map((row) => parseFloat(row[xColumn]))
@@ -82,113 +70,116 @@
             .map((row) => parseFloat(row[yColumn]))
             .filter((val) => !isNaN(val));
 
-        const xMax = Math.max(...xValues);
-        const xMin = Math.min(...xValues);
-        const yMax = Math.max(...yValues);
-        const yMin = Math.min(...yValues);
-
-        const xRange = xMax - xMin;
-        const yRange = yMax - yMin;
+        const [xMin, xMax] = [Math.min(...xValues), Math.max(...xValues)];
+        const [yMin, yMax] = [Math.min(...yValues), Math.max(...yValues)];
+        const [xRange, yRange] = [xMax - xMin, yMax - yMin];
+        const svgWidth = svg.clientWidth || 0;
+        const svgHeight = svg.clientHeight || 0;
         const svgAspectRatio = svgWidth / svgHeight;
         const dataAspectRatio = xRange / yRange;
 
-        let scalingFactor;
-        if (dataAspectRatio > svgAspectRatio) {
-            scalingFactor = svgWidth / xRange;
-        } else {
-            scalingFactor = svgHeight / yRange;
-        }
+        scalingFactor =
+            dataAspectRatio > svgAspectRatio
+                ? svgWidth / xRange
+                : svgHeight / yRange;
 
-        let nodes = data
+        return data
             .map((row) => {
                 const x = parseFloat(row[xColumn]);
                 const y = parseFloat(row[yColumn]);
                 const maxAge = parseInt(row["MaxAge"]);
                 const className = row["Class"];
 
-                return !isNaN(x) && !isNaN(y) && !isNaN(maxAge)
-                    ? {
-                          x:
-                              (x - xMin) * scalingFactor -
-                              (xRange * scalingFactor) / 2,
-                          y:
-                              (y - yMin) * scalingFactor -
-                              (yRange * scalingFactor) / 2,
-                          rings: maxAge,
-                          color: getColorForClass(className),
-                      }
-                    : null;
+                if (isNaN(x) || isNaN(y) || isNaN(maxAge)) return null;
+
+                return {
+                    x:
+                        (x - xMin) * scalingFactor -
+                        (xRange * scalingFactor) / 2,
+                    y:
+                        (y - yMin) * scalingFactor -
+                        (yRange * scalingFactor) / 2,
+                    rings: maxAge,
+                    color: getColorForClass(className),
+                };
             })
             .filter(Boolean);
+    }
 
-        const simulation = forceSimulation(nodes)
-            .force("center", forceCenter(0, 0))
+    $: if (svg && viewType) {
+        nodes = getCoordinates();
+        initializeSimulation(nodes);
+    }
+
+    function initializeSimulation(nodes) {
+        simulation = d3
+            .forceSimulation(nodes)
+            .force("center", d3.forceCenter(0, 0))
             .force(
                 "collide",
-                forceCollide((d) => {
-                    const totalRingSpace =
-                        (reducedRingThickness + reducedRingSpacing) *
-                            (d.rings - 1) +
-                        reducedRingThickness;
-                    return reducedBaseRadius + totalRingSpace;
-                }).strength(1),
+                d3
+                    .forceCollide((d) => {
+                        const totalRingSpace =
+                            (reducedRingThickness + reducedRingSpacing) *
+                                (d.rings - 1) +
+                            reducedRingThickness;
+                        return reducedBaseRadius + totalRingSpace;
+                    })
+                    .strength(1),
             )
             .force(
                 "anchor",
-                forceX(
-                    (d) => centerX + (d.x - centerX) * scalingFactor,
-                ).strength(0.1),
+                d3
+                    .forceX((d) => centerX + (d.x - centerX) * scalingFactor)
+                    .strength(0.1),
             )
             .force(
                 "anchorY",
-                forceY(
-                    (d) => centerY + (d.y - centerY) * scalingFactor,
-                ).strength(0.1),
+                d3
+                    .forceY((d) => centerY + (d.y - centerY) * scalingFactor)
+                    .strength(0.1),
             )
             .on("tick", ticked);
 
         simulation.tick(400);
-
-        function ticked() {
-            nodeGroups.attr("transform", (d) => `translate(${d.x}, ${d.y})`);
-        }
-
-        const nodeGroups = g
-            .selectAll("g.node")
-            .data(nodes)
-            .enter()
-            .append("g")
-            .attr("class", "node");
-
-        nodeGroups.each(function (d) {
-            select(this)
-                .selectAll("circle")
-                .data(range(1, d.rings + 1))
-                .enter()
-                .append("circle")
-                .attr(
-                    "r",
-                    (i) =>
-                        reducedBaseRadius +
-                        i * (reducedRingThickness + reducedRingSpacing) -
-                        reducedRingSpacing,
-                )
-                .attr("fill", "none")
-                .attr("stroke", d.color)
-                .attr("stroke-width", reducedRingThickness);
-        });
     }
 
-    $: if (viewType) {
-        plotCircles();
+    function ticked() {
+        d3.select(svg)
+            .selectAll("g.node")
+            .data(nodes)
+            .join("g")
+            .attr("class", "node")
+            .attr("transform", (d) => `translate(${d.x},${d.y})`);
     }
 
     onMount(() => {
-        plotCircles();
+        nodes = getCoordinates();
+        initializeSimulation(nodes);
     });
 </script>
 
-<svg bind:this={svg} id="visualization"></svg>
+<svg bind:this={svg} {width} {height}>
+    {#if svg && nodes}
+        <g
+            transform="translate({svg?.clientWidth / 2}, {svg?.clientHeight /
+                2}) scale(0.01)"
+        >
+            {#each nodes as node}
+                <g class="node">
+                    {#each Array(node.rings) as _, i}
+                        <circle
+                            r={5 + i}
+                            fill="none"
+                            stroke={node.color}
+                            stroke-width={0.5}
+                        />
+                    {/each}
+                </g>
+            {/each}
+        </g>
+    {/if}
+</svg>
 
 <style>
     svg {
