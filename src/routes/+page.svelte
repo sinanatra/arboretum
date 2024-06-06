@@ -6,12 +6,15 @@
 
     let data = [];
     let viewType = "Geo";
+    let forceParams = {
+        manyBodyStrength: 3,
+        xStrength: 0.1,
+    };
 
     onMount(async () => {
         const response = await fetch("Arnarb_sample.csv");
         const csvData = await response.text();
         data = d3.csvParse(csvData);
-        console.log(data);
     });
 
     function changeViewType(type) {
@@ -20,7 +23,10 @@
 </script>
 
 <div>
-    <Header on:changeViewType={(event) => changeViewType(event.detail)} {viewType}/>
+    <Header
+        on:changeViewType={(event) => changeViewType(event.detail)}
+        {viewType}
+    />
     {#if data.length > 0}
         <Viz {data} {viewType} />
     {/if}
