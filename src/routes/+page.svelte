@@ -36,5 +36,6 @@
     :global(body) {
         background: black;
         overflow: hidden;
+        font-family: sans-serif;
     }
 </style>

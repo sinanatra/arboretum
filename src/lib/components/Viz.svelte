@@ -1,5 +1,6 @@
 <script>
     import { onMount } from "svelte";
+    import Legend from "@components/Legend.svelte";
     import * as d3 from "d3";
 
     export let data;
@@ -23,7 +24,7 @@
     };
 
     const baseRadius = 50;
-    const ringThickness = 1;
+    const ringThickness = 10;
     const ringSpacing = 3;
     const reducedRingThickness = ringThickness * 0.05;
     const reducedRingSpacing = ringSpacing * 1;
@@ -169,10 +170,14 @@
                 <g class="node">
                     {#each Array(node.rings) as _, i}
                         <circle
-                            r={5 + i}
+                            r={reducedBaseRadius +
+                                i *
+                                    (reducedRingThickness +
+                                        reducedRingSpacing) -
+                                reducedRingSpacing}
                             fill="none"
                             stroke={node.color}
-                            stroke-width={0.5}
+                            stroke-width={reducedRingThickness}
                         />
                     {/each}
                 </g>
@@ -180,6 +185,8 @@
         </g>
     {/if}
 </svg>
+
+<Legend {classColorMapping} />
 
 <style>
     svg {
