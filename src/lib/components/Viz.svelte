@@ -1,6 +1,15 @@
 <script>
     import { onMount } from "svelte";
-    import * as d3 from "d3";
+    import { select } from "d3-selection";
+    import { zoom, zoomIdentity } from "d3-zoom";
+    import { range } from "d3-array";
+    import {
+        forceSimulation,
+        forceCollide,
+        forceCenter,
+        forceX,
+        forceY,
+    } from "d3-force";
 
     export let data;
     export let viewType;
@@ -22,35 +31,36 @@
     function plotCircles() {
         if (!data || !svg) return;
 
-        const svgElement = d3.select(svg);
+        const svgElement = select(svg);
         svgElement.selectAll("*").remove();
-        
-        const svgWidth = svgElement.node().clientWidth;
-        const svgHeight = svgElement.node().clientHeight;
+
+        const svgWidth = svg.clientWidth;
+        const svgHeight = svg.clientHeight;
+
         const centerX = svgWidth / 2;
         const centerY = svgHeight / 2;
 
-        const baseRadius = 20;
-        const ringThickness = 0.5;
-        const ringSpacing = 1;
+        const baseRadius = 50;
+        const ringThickness = 1;
+        const ringSpacing = 3;
         const reducedRingThickness = ringThickness * 0.05;
         const reducedRingSpacing = ringSpacing * 1;
         const reducedBaseRadius = baseRadius * 0.4;
 
-        const g = svgElement.append("g");
+        const g = svgElement
+            .append("g")
+            .attr("transform", `translate(${centerX}, ${centerY})`);
 
-        const zoom = d3
-            .zoom()
+        const zoomBehavior = zoom()
             .scaleExtent([0.01, 10])
             .on("zoom", (event) => {
                 g.attr("transform", event.transform);
             });
 
-        svgElement.call(zoom);
-        const initialScale = 0.005;
+        svgElement.call(zoomBehavior);
         svgElement.call(
-            zoom.transform,
-            d3.zoomIdentity.translate(centerX, centerY).scale(initialScale),
+            zoomBehavior.transform,
+            zoomIdentity.translate(centerX, centerY).scale(0.01),
         );
 
         let xColumn, yColumn;
@@ -89,52 +99,55 @@
             scalingFactor = svgHeight / yRange;
         }
 
-        let nodes = [];
+        let nodes = data
+            .map((row) => {
+                const x = parseFloat(row[xColumn]);
+                const y = parseFloat(row[yColumn]);
+                const maxAge = parseInt(row["MaxAge"]);
+                const className = row["Class"];
 
-        data.forEach((row) => {
-            const x = parseFloat(row[xColumn]);
-            const y = parseFloat(row[yColumn]);
-            const maxAge = parseInt(row["MaxAge"]);
-            const className = row["Class"];
+                return !isNaN(x) && !isNaN(y) && !isNaN(maxAge)
+                    ? {
+                          x:
+                              (x - xMin) * scalingFactor -
+                              (xRange * scalingFactor) / 2,
+                          y:
+                              (y - yMin) * scalingFactor -
+                              (yRange * scalingFactor) / 2,
+                          rings: maxAge,
+                          color: getColorForClass(className),
+                      }
+                    : null;
+            })
+            .filter(Boolean);
 
-            if (!isNaN(x) && !isNaN(y) && !isNaN(maxAge)) {
-                nodes.push({
-                    x: centerX + (x - xMin) * scalingFactor,
-                    y: centerY + (y - yMin) * scalingFactor,
-                    radius: baseRadius,
-                    rings: maxAge,
-                    color: getColorForClass(className),
-                });
-            }
-        });
-
-        const simulation = d3
-            .forceSimulation(nodes)
-            .force("center", d3.forceCenter(centerX, centerY).strength(0.05))
+        const simulation = forceSimulation(nodes)
+            .force("center", forceCenter(0, 0))
             .force(
                 "collide",
-                d3
-                    .forceCollide((d) => {
-                        const totalRingSpace =
-                            (ringThickness + ringSpacing) * (d.rings - 1) +
-                            ringThickness;
-                        return d.radius + totalRingSpace;
-                    })
-                    .strength(1),
+                forceCollide((d) => {
+                    const totalRingSpace =
+                        (reducedRingThickness + reducedRingSpacing) *
+                            (d.rings - 1) +
+                        reducedRingThickness;
+                    return reducedBaseRadius + totalRingSpace;
+                }).strength(1),
             )
             .force(
                 "anchor",
-                d3
-                    .forceX((d) => centerX + (d.x - centerX) * scalingFactor)
-                    .strength(0.1),
+                forceX(
+                    (d) => centerX + (d.x - centerX) * scalingFactor,
+                ).strength(0.1),
             )
             .force(
                 "anchorY",
-                d3
-                    .forceY((d) => centerY + (d.y - centerY) * scalingFactor)
-                    .strength(0.1),
+                forceY(
+                    (d) => centerY + (d.y - centerY) * scalingFactor,
+                ).strength(0.1),
             )
             .on("tick", ticked);
+
+        simulation.tick(400);
 
         function ticked() {
             nodeGroups.attr("transform", (d) => `translate(${d.x}, ${d.y})`);
@@ -145,13 +158,12 @@
             .data(nodes)
             .enter()
             .append("g")
-            .attr("class", "node")
-            .attr("transform", (d) => `translate(${d.x}, ${d.y})`);
+            .attr("class", "node");
 
         nodeGroups.each(function (d) {
-            d3.select(this)
+            select(this)
                 .selectAll("circle")
-                .data(d3.range(1, d.rings + 1))
+                .data(range(1, d.rings + 1))
                 .enter()
                 .append("circle")
                 .attr(
@@ -167,15 +179,13 @@
         });
     }
 
-    $: plotCircles();
+    $: if (viewType) {
+        plotCircles();
+    }
 
     onMount(() => {
         plotCircles();
     });
-
-    $: if (viewType) {
-        plotCircles();
-    }
 </script>
 
 <svg bind:this={svg} id="visualization"></svg>

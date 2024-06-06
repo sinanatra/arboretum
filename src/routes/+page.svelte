@@ -20,7 +20,7 @@
 </script>
 
 <div>
-    <Header on:changeViewType={(event) => changeViewType(event.detail)} />
+    <Header on:changeViewType={(event) => changeViewType(event.detail)} {viewType}/>
     {#if data.length > 0}
         <Viz {data} {viewType} />
     {/if}
@@ -29,5 +29,6 @@
 <style>
     :global(body) {
         background: black;
+        overflow: hidden;
     }
 </style>
