@@ -12,7 +12,7 @@
     };
 
     onMount(async () => {
-        const response = await fetch("Arnarb_sample.csv");
+        const response = await fetch("Arnarb.csv");
         const csvData = await response.text();
         data = d3.csvParse(csvData);
     });
