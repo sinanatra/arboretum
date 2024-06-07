@@ -27,8 +27,9 @@
     const ringThickness = 10;
     const ringSpacing = 3;
     const reducedRingThickness = ringThickness * 0.05;
-    const reducedRingSpacing = ringSpacing * 1;
+    const reducedRingSpacing = ringSpacing * 2;
     const reducedBaseRadius = baseRadius * 0.4;
+    const maxRings = 20;
 
     function getColorForClass(className) {
         return classColorMapping[className] || "#000";
@@ -70,6 +71,9 @@
         const yValues = data
             .map((row) => parseFloat(row[yColumn]))
             .filter((val) => !isNaN(val));
+        const maxAges = data
+            .map((row) => parseInt(row["MaxAge"]))
+            .filter((val) => !isNaN(val));
 
         const [xMin, xMax] = [Math.min(...xValues), Math.max(...xValues)];
         const [yMin, yMax] = [Math.min(...yValues), Math.max(...yValues)];
@@ -78,6 +82,7 @@
         const svgHeight = svg.clientHeight || 0;
         const svgAspectRatio = svgWidth / svgHeight;
         const dataAspectRatio = xRange / yRange;
+        const [ageMin, ageMax] = [Math.min(...maxAges), Math.max(...maxAges)];
 
         scalingFactor =
             dataAspectRatio > svgAspectRatio
@@ -88,7 +93,11 @@
             .map((row) => {
                 const x = parseFloat(row[xColumn]);
                 const y = parseFloat(row[yColumn]);
-                const maxAge = parseInt(row["MaxAge"]);
+                // const maxAge = parseInt(row["MaxAge"]);
+                let maxAge = parseInt(row["MaxAge"]);
+
+                maxAge = Math.min(Math.max(Math.round(maxAge), 1), maxRings);
+                // limit rings
                 const className = row["Class"];
 
                 if (isNaN(x) || isNaN(y) || isNaN(maxAge)) return null;
@@ -142,7 +151,10 @@
             )
             .on("tick", ticked);
 
-        simulation.tick(400);
+        // simulation.tick(400);
+        setTimeout(() => {
+            simulation.stop();
+        }, 3000);
     }
 
     function ticked() {
