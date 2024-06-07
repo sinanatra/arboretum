@@ -154,7 +154,7 @@
         // simulation.tick(400);
         setTimeout(() => {
             simulation.stop();
-        }, 3000);
+        }, 6000);
     }
 
     function ticked() {
