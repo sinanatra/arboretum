@@ -122,6 +122,7 @@
     }
 
     function initializeSimulation(nodes) {
+        let tickCount = 0;
         simulation = d3
             .forceSimulation(nodes)
             .force("center", d3.forceCenter(0, 0))
@@ -149,12 +150,14 @@
                     .forceY((d) => centerY + (d.y - centerY) * scalingFactor)
                     .strength(0.1),
             )
-            .on("tick", ticked);
+            .on("tick", () => {
+                ticked();
 
-        // simulation.tick(400);
-        setTimeout(() => {
-            simulation.stop();
-        }, 6000);
+                tickCount++;
+                if (tickCount >= 400) {
+                    simulation.stop();
+                }
+            });
     }
 
     function ticked() {
