@@ -14,6 +14,8 @@
     let nodes;
     let scalingFactor;
     let centerX, centerY;
+    let loading = true;
+    let previousTick = 0;
 
     const classColorMapping = {
         Eudicot: "#09c",
@@ -23,13 +25,13 @@
         Pinopsida: "#c66",
     };
 
-    const baseRadius = 50;
-    const ringThickness = 10;
+    const baseRadius = 5;
+    const ringThickness = 30;
     const ringSpacing = 3;
     const reducedRingThickness = ringThickness * 0.05;
     const reducedRingSpacing = ringSpacing * 2;
     const reducedBaseRadius = baseRadius * 0.4;
-    const maxRings = 20;
+    const maxRings = 10;
 
     function getColorForClass(className) {
         return classColorMapping[className] || "#000";
@@ -93,11 +95,13 @@
             .map((row) => {
                 const x = parseFloat(row[xColumn]);
                 const y = parseFloat(row[yColumn]);
-                // const maxAge = parseInt(row["MaxAge"]);
                 let maxAge = parseInt(row["MaxAge"]);
 
-                maxAge = Math.min(Math.max(Math.round(maxAge), 1), maxRings);
-                // limit rings
+                let mRings = Math.min(
+                    Math.max(Math.round(maxAge), 1),
+                    maxRings,
+                );
+
                 const className = row["Class"];
 
                 if (isNaN(x) || isNaN(y) || isNaN(maxAge)) return null;
@@ -109,7 +113,8 @@
                     y:
                         (y - yMin) * scalingFactor -
                         (yRange * scalingFactor) / 2,
-                    rings: maxAge,
+                    rings: mRings,
+                    maxAge: maxAge,
                     color: getColorForClass(className),
                 };
             })
@@ -130,11 +135,11 @@
                 "collide",
                 d3
                     .forceCollide((d) => {
-                        const totalRingSpace =
-                            (reducedRingThickness + reducedRingSpacing) *
-                                (d.rings - 1) +
-                            reducedRingThickness;
-                        return reducedBaseRadius + totalRingSpace;
+                        return (
+                            reducedBaseRadius +
+                            d.maxAge * reducedRingThickness +
+                            reducedRingSpacing
+                        );
                     })
                     .strength(1),
             )
@@ -151,13 +156,17 @@
                     .strength(0.1),
             )
             .on("tick", () => {
-                ticked();
-
                 tickCount++;
-                if (tickCount >= 400) {
-                    simulation.stop();
+                if (tickCount >= 200) {
+                    loading = false;
+                    ticked();
+                } else {
+                    loading = true;
                 }
-            });
+            })
+            // .on("end", () => {
+            //     simulation.stop();
+            // });
     }
 
     function ticked() {
@@ -177,27 +186,43 @@
 
 <svg bind:this={svg} {width} {height}>
     {#if svg && nodes}
-        <g
-            transform="translate({svg?.clientWidth / 2}, {svg?.clientHeight /
-                2}) scale(0.01)"
-        >
-            {#each nodes as node}
-                <g class="node">
-                    {#each Array(node.rings) as _, i}
-                        <circle
-                            r={reducedBaseRadius +
-                                i *
-                                    (reducedRingThickness +
-                                        reducedRingSpacing) -
-                                reducedRingSpacing}
+        {#if loading}
+            <text
+                x="50%"
+                y="50%"
+                text-anchor="middle"
+                class="loading"
+                font-size="18">Loading...</text
+            >
+        {:else}
+            <g
+                transform="translate({svg?.clientWidth /
+                    2}, {svg?.clientHeight / 2}) scale(0.01)"
+            >
+                {#each nodes as node}
+                    <g class="node">
+                        <!-- <circle
+                            r={node.maxAge}
                             fill="none"
                             stroke={node.color}
                             stroke-width={reducedRingThickness}
-                        />
-                    {/each}
-                </g>
-            {/each}
-        </g>
+                        /> -->
+                        {#each Array(node.rings) as _, i}
+                            <circle
+                                r={reducedBaseRadius +
+                                    i *
+                                        (reducedRingThickness +
+                                            reducedRingSpacing)}
+                                fill="none"
+                                stroke={node.color}
+                                stroke-width={reducedRingThickness}
+                                class="inner-ring"
+                            />
+                        {/each}
+                    </g>
+                {/each}
+            </g>
+        {/if}
     {/if}
 </svg>
 
@@ -207,5 +232,17 @@
     svg {
         width: 100%;
         height: 100vh;
+    }
+
+    text {
+        fill: black;
+    }
+
+    .loading {
+        fill: white;
+    }
+
+    .inner-ring {
+        /* display: none; */
     }
 </style>
