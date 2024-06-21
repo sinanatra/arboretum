@@ -27,11 +27,10 @@
 
     const baseRadius = 5;
     const ringThickness = 30;
-    const ringSpacing = 3;
+    const ringSpacing = 2;
     const reducedRingThickness = ringThickness * 0.05;
     const reducedRingSpacing = ringSpacing * 2;
     const reducedBaseRadius = baseRadius * 0.4;
-    const maxRings = 10;
 
     function getColorForClass(className) {
         return classColorMapping[className] || "#000";
@@ -97,11 +96,6 @@
                 const y = parseFloat(row[yColumn]);
                 let maxAge = parseInt(row["MaxAge"]);
 
-                let mRings = Math.min(
-                    Math.max(Math.round(maxAge), 1),
-                    maxRings,
-                );
-
                 const className = row["Class"];
 
                 if (isNaN(x) || isNaN(y) || isNaN(maxAge)) return null;
@@ -113,7 +107,7 @@
                     y:
                         (y - yMin) * scalingFactor -
                         (yRange * scalingFactor) / 2,
-                    rings: mRings,
+                    rings: Math.ceil(maxAge / 10), // Perhaps we will change this ;)
                     maxAge: maxAge,
                     color: getColorForClass(className),
                 };
@@ -163,10 +157,10 @@
                 } else {
                     loading = true;
                 }
-            })
-            // .on("end", () => {
-            //     simulation.stop();
-            // });
+            });
+        // .on("end", () => {
+        //     simulation.stop();
+        // });
     }
 
     function ticked() {
@@ -201,18 +195,18 @@
             >
                 {#each nodes as node}
                     <g class="node">
-                        <!-- <circle
+                        <circle
                             r={node.maxAge}
                             fill="none"
                             stroke={node.color}
                             stroke-width={reducedRingThickness}
-                        /> -->
+                        />
                         {#each Array(node.rings) as _, i}
                             <circle
                                 r={reducedBaseRadius +
                                     i *
-                                        (reducedRingThickness +
-                                            reducedRingSpacing)}
+                                        ((node.maxAge - reducedBaseRadius) /
+                                            node.rings)}
                                 fill="none"
                                 stroke={node.color}
                                 stroke-width={reducedRingThickness}
