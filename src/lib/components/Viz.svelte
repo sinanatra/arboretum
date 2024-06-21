@@ -141,13 +141,13 @@
                 "anchor",
                 d3
                     .forceX((d) => centerX + (d.x - centerX) * scalingFactor)
-                    .strength(0.1),
+                    .strength(0.4),
             )
             .force(
                 "anchorY",
                 d3
                     .forceY((d) => centerY + (d.y - centerY) * scalingFactor)
-                    .strength(0.1),
+                    .strength(0.4),
             )
             .on("tick", () => {
                 tickCount++;
@@ -234,9 +234,5 @@
 
     .loading {
         fill: white;
-    }
-
-    .inner-ring {
-        /* display: none; */
     }
 </style>
