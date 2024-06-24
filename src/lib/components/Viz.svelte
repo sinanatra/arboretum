@@ -29,7 +29,6 @@
     const ringThickness = 30;
     const ringSpacing = 2;
     const increase = 2;
-    const reducedRingThickness = ringThickness * 0.05;
     const reducedRingSpacing = ringSpacing * 2;
     const reducedBaseRadius = baseRadius * 0.4;
 
@@ -196,7 +195,6 @@
                             r={node.maxAge}
                             fill="none"
                             stroke={node.color}
-                            stroke-width={reducedRingThickness}
                         /> -->
                         {#each Array(node.rings) as _, i}
                             <circle
@@ -229,7 +227,7 @@
         fill: black;
     }
 
-    circle{
+    circle {
         stroke-width: 10;
     }
 
