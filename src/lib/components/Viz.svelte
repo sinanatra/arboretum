@@ -28,6 +28,7 @@
     const baseRadius = 5;
     const ringThickness = 30;
     const ringSpacing = 2;
+    const increase = 2;
     const reducedRingThickness = ringThickness * 0.05;
     const reducedRingSpacing = ringSpacing * 2;
     const reducedBaseRadius = baseRadius * 0.4;
@@ -72,9 +73,6 @@
         const yValues = data
             .map((row) => parseFloat(row[yColumn]))
             .filter((val) => !isNaN(val));
-        const maxAges = data
-            .map((row) => parseInt(row["MaxAge"]))
-            .filter((val) => !isNaN(val));
 
         const [xMin, xMax] = [Math.min(...xValues), Math.max(...xValues)];
         const [yMin, yMax] = [Math.min(...yValues), Math.max(...yValues)];
@@ -83,7 +81,6 @@
         const svgHeight = svg.clientHeight || 0;
         const svgAspectRatio = svgWidth / svgHeight;
         const dataAspectRatio = xRange / yRange;
-        const [ageMin, ageMax] = [Math.min(...maxAges), Math.max(...maxAges)];
 
         scalingFactor =
             dataAspectRatio > svgAspectRatio
@@ -94,7 +91,7 @@
             .map((row) => {
                 const x = parseFloat(row[xColumn]);
                 const y = parseFloat(row[yColumn]);
-                let maxAge = parseInt(row["MaxAge"]);
+                let maxAge = parseInt(row["MaxAge"]) * increase;
 
                 const className = row["Class"];
 
@@ -107,7 +104,7 @@
                     y:
                         (y - yMin) * scalingFactor -
                         (yRange * scalingFactor) / 2,
-                    rings: Math.ceil(maxAge / 10), // Perhaps we will change this ;)
+                    rings: Math.ceil(maxAge / increase / 10), // Perhaps we will change this ;)
                     maxAge: maxAge,
                     color: getColorForClass(className),
                 };
@@ -131,7 +128,7 @@
                     .forceCollide((d) => {
                         return (
                             reducedBaseRadius +
-                            d.maxAge * reducedRingThickness +
+                            d.maxAge * increase * reducedRingThickness +
                             reducedRingSpacing
                         );
                     })
@@ -195,16 +192,17 @@
             >
                 {#each nodes as node}
                     <g class="node">
-                        <circle
+                        <!-- <circle
                             r={node.maxAge}
                             fill="none"
                             stroke={node.color}
                             stroke-width={reducedRingThickness}
-                        />
+                        /> -->
                         {#each Array(node.rings) as _, i}
                             <circle
                                 r={reducedBaseRadius +
                                     i *
+                                        increase *
                                         ((node.maxAge - reducedBaseRadius) /
                                             node.rings)}
                                 fill="none"
