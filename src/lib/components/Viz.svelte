@@ -128,7 +128,7 @@
                     .forceCollide((d) => {
                         return (
                             reducedBaseRadius +
-                            d.maxAge * increase * reducedRingThickness +
+                            d.maxAge * increase +
                             reducedRingSpacing
                         );
                     })
@@ -207,7 +207,6 @@
                                             node.rings)}
                                 fill="none"
                                 stroke={node.color}
-                                stroke-width={reducedRingThickness}
                                 class="inner-ring"
                             />
                         {/each}
@@ -228,6 +227,10 @@
 
     text {
         fill: black;
+    }
+
+    circle{
+        stroke-width: 10;
     }
 
     .loading {
