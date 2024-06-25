@@ -120,7 +120,7 @@
         let tickCount = 0;
         simulation = d3
             .forceSimulation(nodes)
-            .force("center", d3.forceCenter(0, 0))
+            .force("center", d3.forceCenter(2, 2))
             .force(
                 "collide",
                 d3
@@ -148,15 +148,17 @@
             .on("tick", () => {
                 tickCount++;
                 if (tickCount >= 200) {
-                    loading = false;
+                    // loading = false;
                     ticked();
                 } else {
                     loading = true;
                 }
+            })
+            .on("end", () => {
+                loading = false;
+                ticked();
+                // simulation.stop();
             });
-        // .on("end", () => {
-        //     simulation.stop();
-        // });
     }
 
     function ticked() {
@@ -176,44 +178,38 @@
 
 <svg bind:this={svg} {width} {height}>
     {#if svg && nodes}
-        {#if loading}
-            <text
-                x="50%"
-                y="50%"
-                text-anchor="middle"
-                class="loading"
-                font-size="18">Loading...</text
-            >
-        {:else}
-            <g
-                transform="translate({svg?.clientWidth /
-                    2}, {svg?.clientHeight / 2}) scale(0.01)"
-            >
-                {#each nodes as node}
-                    <g class="node">
-                        <!-- <circle
+        <g
+            transform="translate({svg?.clientWidth / 2}, {svg?.clientHeight /
+                2}) scale(0.01)"
+        >
+            {#each nodes as node}
+                <g class="node">
+                    <!-- <circle
                             r={node.maxAge}
                             fill="none"
                             stroke={node.color}
                         /> -->
-                        {#each Array(node.rings) as _, i}
-                            <circle
-                                r={reducedBaseRadius +
-                                    i *
-                                        increase *
-                                        ((node.maxAge - reducedBaseRadius) /
-                                            node.rings)}
-                                fill="none"
-                                stroke={node.color}
-                                class="inner-ring"
-                            />
-                        {/each}
-                    </g>
-                {/each}
-            </g>
-        {/if}
+                    {#each Array(node.rings) as _, i}
+                        <circle
+                            r={reducedBaseRadius +
+                                i *
+                                    increase *
+                                    ((node.maxAge - reducedBaseRadius) /
+                                        node.rings)}
+                            fill="none"
+                            stroke={node.color}
+                            class="inner-ring"
+                        />
+                    {/each}
+                </g>
+            {/each}
+        </g>
     {/if}
 </svg>
+
+{#if loading}
+    <div class="loading">Loading...</div>
+{/if}
 
 <Legend {classColorMapping} />
 
@@ -223,15 +219,20 @@
         height: 100vh;
     }
 
-    text {
-        fill: black;
-    }
-
     circle {
         stroke-width: 10;
     }
 
     .loading {
-        fill: white;
+        width: 100vw;
+        height: 100vh;
+        color: white;
+        background-color: black;
+        position: absolute;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
 </style>
