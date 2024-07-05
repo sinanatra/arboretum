@@ -6,29 +6,40 @@
 
     let data = [];
     let viewType = "Geo";
-    let forceParams = {
-        manyBodyStrength: 3,
-        xStrength: 0.1,
-    };
+    let currentYear = 2024; // Example starting year
+    let minYear;
+    let maxYear;
 
     onMount(async () => {
         const response = await fetch("Arnarb.csv");
         const csvData = await response.text();
         data = d3.csvParse(csvData);
+
+        minYear = Math.min(...data.map((d) => parseInt(d.Year)));
+        maxYear = Math.max(...data.map((d) => parseInt(d.Year)));
+        currentYear = minYear; // Start the timeline at the minimum year
     });
 
     function changeViewType(type) {
         viewType = type;
+    }
+
+    function handleYearChange(event) {
+        currentYear = +event.detail;
     }
 </script>
 
 <div>
     <Header
         on:changeViewType={(event) => changeViewType(event.detail)}
+        on:yearChange={handleYearChange}
         {viewType}
+        {currentYear}
+        {minYear}
+        {maxYear}
     />
     {#if data.length > 0}
-        <Viz {data} {viewType} />
+        <Viz {data} {viewType} {currentYear} />
     {/if}
 </div>
 

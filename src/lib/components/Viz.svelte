@@ -16,6 +16,7 @@
     let centerX, centerY;
     let loading = true;
     let previousTick = 0;
+    export let currentYear;
 
     const classColorMapping = {
         Eudicot: "#09c",
@@ -26,7 +27,6 @@
     };
 
     const baseRadius = 5;
-    const ringThickness = 30;
     const ringSpacing = 2;
     const increase = 2;
     const reducedRingSpacing = ringSpacing * 2;
@@ -91,6 +91,7 @@
                 const x = parseFloat(row[xColumn]);
                 const y = parseFloat(row[yColumn]);
                 let maxAge = parseInt(row["MaxAge"]) * increase;
+                const year = parseInt(row["Year"]);
 
                 const className = row["Class"];
 
@@ -105,6 +106,7 @@
                         (yRange * scalingFactor) / 2,
                     rings: Math.ceil(maxAge / increase / 10), // Perhaps we will change this ;)
                     maxAge: maxAge,
+                    year,
                     color: getColorForClass(className),
                 };
             })
@@ -189,18 +191,20 @@
                             fill="none"
                             stroke={node.color}
                         /> -->
-                    {#each Array(node.rings) as _, i}
-                        <circle
-                            r={reducedBaseRadius +
-                                i *
-                                    increase *
-                                    ((node.maxAge - reducedBaseRadius) /
-                                        node.rings)}
-                            fill="none"
-                            stroke={node.color}
-                            class="inner-ring"
-                        />
-                    {/each}
+                    {#if currentYear >= node.year}
+                        {#each Array(node.rings) as _, i}
+                            <circle
+                                r={reducedBaseRadius +
+                                    i *
+                                        increase *
+                                        ((node.maxAge - reducedBaseRadius) /
+                                            node.rings)}
+                                fill="none"
+                                stroke={node.color}
+                                class="inner-ring"
+                            />
+                        {/each}
+                    {/if}
                 </g>
             {/each}
         </g>
