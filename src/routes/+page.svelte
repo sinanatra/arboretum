@@ -6,7 +6,7 @@
 
     let data = [];
     let viewType = "Geo";
-    let currentYear = 2024; // Example starting year
+    let currentYear = 2011; 
     let minYear;
     let maxYear;
 
@@ -17,7 +17,7 @@
 
         minYear = Math.min(...data.map((d) => parseInt(d.Year)));
         maxYear = Math.max(...data.map((d) => parseInt(d.Year)));
-        currentYear = minYear; // Start the timeline at the minimum year
+        currentYear = maxYear; 
     });
 
     function changeViewType(type) {
