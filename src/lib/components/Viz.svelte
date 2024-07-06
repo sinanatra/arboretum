@@ -28,7 +28,7 @@
 
     const baseRadius = 5;
     const ringSpacing = 2;
-    const increase = 2;
+    const increase = 3;
     const reducedRingSpacing = ringSpacing * 2;
     const reducedBaseRadius = baseRadius * 0.4;
 
@@ -192,7 +192,8 @@
                             stroke={node.color}
                         /> -->
                     {#if currentYear >= node.year}
-                        {#each Array(node.rings) as _, i}
+                        <!-- {#each Array(node.rings) as _, i} -->
+                        {#each Array(Math.min(Math.ceil(currentYear - node.year), node.rings)) as _, i}
                             <circle
                                 r={reducedBaseRadius +
                                     i *
