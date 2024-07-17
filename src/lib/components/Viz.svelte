@@ -19,11 +19,16 @@
     export let currentYear;
 
     const classColorMapping = {
-        Eudicot: "#09c",
-        Ginkgoopsida: "#2cb",
-        Monocot: "#4d8",
-        Lycopodiopsida: "#9d5",
-        Pinopsida: "#c66",
+        Eudicot: "#d7191c",
+        Ginkgoopsida: "#fdae61",
+        Monocot: "#ffffbf",
+        Lycopodiopsida: "#abdda4",
+        Pinopsida: "#2b83ba",
+        // 1: "#d7191c",
+        // 2: "#fdae61",
+        // 3: "#ffffbf",
+        // 4: "#abdda4",
+        // 5: "#2b83ba",
     };
 
     const baseRadius = 100; // This is much bigger to avoid points at the center of trees
@@ -34,7 +39,7 @@
     const reducedBaseRadius = baseRadius * 0.4;
 
     function getColorForClass(className) {
-        return classColorMapping[className] || "#000";
+        return classColorMapping[className] || "#FFF";
     }
 
     function getCoordinates() {
@@ -94,7 +99,8 @@
                 let maxAge = parseInt(row["MaxAge"]) * increase;
                 const year = parseInt(row["Year"]);
 
-                const className = row["Class"];
+                // const className = row["Cluster"]; // Test UMAP clusters
+                const className = row["Class"]; // Use Standard Classes
 
                 if (isNaN(x) || isNaN(y) || isNaN(maxAge)) return null;
 
