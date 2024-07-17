@@ -26,9 +26,10 @@
         Pinopsida: "#c66",
     };
 
-    const baseRadius = 5;
-    const ringSpacing = 2;
-    const increase = 3;
+    const baseRadius = 100; // This is much bigger to avoid points at the center of trees
+    const increase = 3; // This is the space between rings
+    
+    const ringSpacing = 10;
     const reducedRingSpacing = ringSpacing * 2;
     const reducedBaseRadius = baseRadius * 0.4;
 
@@ -99,12 +100,13 @@
 
                 return {
                     x:
-                        (x - xMin) * scalingFactor -
-                        (xRange * scalingFactor) / 2,
+                        -((x - xMin) * scalingFactor -
+                        (xRange * scalingFactor) / 2),
                     y:
-                        (y - yMin) * scalingFactor -
-                        (yRange * scalingFactor) / 2,
-                    rings: Math.ceil(maxAge / increase / 10), // Perhaps we will change this ;)
+                        -((y - yMin) * scalingFactor -
+                        (yRange * scalingFactor) / 2),
+                    // rings: Math.ceil(maxAge / increase / 5), // This do not corresponds to timeline
+                    rings: Math.ceil(maxAge / increase),
                     maxAge: maxAge,
                     year,
                     color: getColorForClass(className),
@@ -123,18 +125,18 @@
         simulation = d3
             .forceSimulation(nodes)
             .force("center", d3.forceCenter(2, 2))
-            .force(
-                "collide",
-                d3
-                    .forceCollide((d) => {
-                        return (
-                            reducedBaseRadius +
-                            d.maxAge * increase +
-                            reducedRingSpacing
-                        );
-                    })
-                    .strength(1),
-            )
+            // .force(
+            //     "collide",
+            //     d3
+            //         .forceCollide((d) => {
+            //             return (
+            //                 reducedBaseRadius +
+            //                 d.maxAge * increase +
+            //                 reducedRingSpacing
+            //             );
+            //         })
+            //         .strength(1),
+            // )
             .force(
                 "anchor",
                 d3
@@ -203,6 +205,7 @@
                                 fill="none"
                                 stroke={node.color}
                                 class="inner-ring"
+                                
                             />
                         {/each}
                     {/if}
@@ -218,6 +221,11 @@
 
 <Legend {classColorMapping} />
 
+
+
+
+
+
 <style>
     svg {
         width: 100%;
@@ -225,7 +233,8 @@
     }
 
     circle {
-        stroke-width: 10;
+        stroke-width: 1;
+        /* fill-opacity: .5; */
     }
 
     .loading {
