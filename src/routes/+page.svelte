@@ -11,7 +11,7 @@
     let maxYear;
 
     onMount(async () => {
-        const response = await fetch("Arnarb.csv");
+        const response = await fetch("Arnarbmod.csv");
         const csvData = await response.text();
         data = d3.csvParse(csvData);
 
