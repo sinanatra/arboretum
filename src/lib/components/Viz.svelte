@@ -1,258 +1,146 @@
 <script>
-    import { onMount } from "svelte";
-    import Legend from "@components/Legend.svelte";
-    import * as d3 from "d3";
+  import { onMount } from "svelte";
+  import * as d3 from "d3";
 
-    export let data;
-    export let viewType;
+  export let data;
+  export let currentYear;
 
-    let svg;
-    let width;
-    let height;
-    let transform = d3.zoomIdentity;
-    let simulation;
-    let nodes;
-    let scalingFactor;
-    let centerX, centerY;
-    let loading = true;
-    let previousTick = 0;
-    export let currentYear;
+  let svg;
+  let nodes = [];
+  let xScale, yScale;
+  let transform = d3.zoomIdentity;
 
-    const classColorMapping = {
-        Eudicot: "#d7191c",
-        Ginkgoopsida: "#fdae61",
-        Monocot: "#ffffbf",
-        Lycopodiopsida: "#abdda4",
-        Pinopsida: "#2b83ba",
-        // 1: "#d7191c",
-        // 2: "#fdae61",
-        // 3: "#ffffbf",
-        // 4: "#abdda4",
-        // 5: "#2b83ba",
-    };
+  const innerRadius = 1;
+  const ringWidth = 2;
+  const collisionMargin = 2;
+  const maxDisplayRings = 5;
+  
+  const maxOuterRadius = innerRadius + (maxDisplayRings - 1) * ringWidth;
 
-    const baseRadius = 100; // This is much bigger to avoid points at the center of trees
-    const increase = 3; // This is the space between rings
-    
-    const ringSpacing = 10;
-    const reducedRingSpacing = ringSpacing * 2;
-    const reducedBaseRadius = baseRadius * 0.4;
+  function getColorForData(row) {
+    return "black";
+  }
 
-    function getColorForClass(className) {
-        return classColorMapping[className] || "#FFF";
-    }
+  function computeNodes() {
+    if (!data || !svg || currentYear === undefined) return [];
+    const svgWidth = svg.clientWidth;
+    const svgHeight = svg.clientHeight;
 
-    function getCoordinates() {
-        if (!data) return [];
+    const xValues = data
+      .map((d) => parseFloat(d.X_COORD))
+      .filter((v) => !isNaN(v));
+    const yValues = data
+      .map((d) => parseFloat(d.Y_COORD))
+      .filter((v) => !isNaN(v));
+    const xMin = d3.min(xValues);
+    const xMax = d3.max(xValues);
+    const yMin = d3.min(yValues);
+    const yMax = d3.max(yValues);
+    xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, svgWidth]);
+    yScale = d3.scaleLinear().domain([yMin, yMax]).range([svgHeight, 0]);
 
-        centerX = svg?.clientWidth / 2;
-        centerY = svg?.clientHeight / 2;
+    const computed = data
+      .map((row, i) => {
+        const x = parseFloat(row.X_COORD);
+        const y = parseFloat(row.Y_COORD);
+        const accYear = parseInt(row.ACC_YR);
+        const lastDate = parseInt(row.last_date);
+        if (isNaN(x) || isNaN(y) || isNaN(accYear) || isNaN(lastDate))
+          return null;
+        if (currentYear > lastDate) return null;
+        const maxRings = Math.floor((lastDate - accYear) / 10);
+        let numRings = 0;
+        if (currentYear >= accYear) {
+          numRings = Math.floor((currentYear - accYear) / 10);
+          if (numRings > maxRings) numRings = maxRings;
+          numRings = Math.min(numRings, maxDisplayRings);
+        }
 
-        const zoom = d3
-            .zoom()
-            .scaleExtent([0.01, 10])
-            .on("zoom", (event) => {
-                transform = event.transform;
-                d3.select(svg).select("g").attr("transform", transform);
-            });
+        let outerRadius =
+          numRings > 0 ? innerRadius + (numRings - 1) * ringWidth : innerRadius;
 
-        d3.select(svg)
-            .call(zoom)
-            .call(
-                zoom.transform,
-                d3.zoomIdentity.translate(centerX, centerY).scale(0.01),
-            );
-
-        const columns = {
-            UMAP: ["UMAP_1", "UMAP_2"],
-            Geo: ["geo_1", "geo_2"],
-            Rad: ["Scaled_Rad_1", "Scaled_Rad_2"],
+        outerRadius = Math.min(outerRadius, maxOuterRadius);
+        const x0 = xScale(x);
+        const y0 = yScale(y);
+        return {
+          id: row.PLANTID ? row.PLANTID : i,
+          x0,
+          y0,
+          x: x0,
+          y: y0,
+          accYear,
+          lastDate,
+          numRings,
+          outerRadius,
+          color: getColorForData(row),
         };
+      })
+      .filter(Boolean);
+    return computed;
+  }
 
-        const [xColumn, yColumn] = columns[viewType] || [];
-        if (!xColumn || !yColumn) return [];
+  function runSimulation(nodesArray) {
+    const simulation = d3
+      .forceSimulation(nodesArray)
+      .force("x", d3.forceX((d) => d.x0).strength(0.8))
+      .force("y", d3.forceY((d) => d.y0).strength(0.8))
+      .force(
+        "collide",
+        d3.forceCollide((d) => d.outerRadius + collisionMargin)
+      )
+      .stop();
 
-        const xValues = data
-            .map((row) => parseFloat(row[xColumn]))
-            .filter((val) => !isNaN(val));
-        const yValues = data
-            .map((row) => parseFloat(row[yColumn]))
-            .filter((val) => !isNaN(val));
+    for (let i = 0; i < 500; i++) simulation.tick();
+  }
 
-        const [xMin, xMax] = [Math.min(...xValues), Math.max(...xValues)];
-        const [yMin, yMax] = [Math.min(...yValues), Math.max(...yValues)];
-        const [xRange, yRange] = [xMax - xMin, yMax - yMin];
-        const svgWidth = svg.clientWidth || 0;
-        const svgHeight = svg.clientHeight || 0;
-        const svgAspectRatio = svgWidth / svgHeight;
-        const dataAspectRatio = xRange / yRange;
+  $: if (data && svg && currentYear !== undefined) {
+    nodes = computeNodes();
+    runSimulation(nodes);
+  }
 
-        scalingFactor =
-            dataAspectRatio > svgAspectRatio
-                ? svgWidth / xRange
-                : svgHeight / yRange;
-
-        return data
-            .map((row) => {
-                const x = parseFloat(row[xColumn]);
-                const y = parseFloat(row[yColumn]);
-                let maxAge = parseInt(row["MaxAge"]) * increase;
-                const year = parseInt(row["Year"]);
-
-                // const className = row["Cluster"]; // Test UMAP clusters
-                const className = row["Class"]; // Use Standard Classes
-
-                if (isNaN(x) || isNaN(y) || isNaN(maxAge)) return null;
-
-                return {
-                    x:
-                        -((x - xMin) * scalingFactor -
-                        (xRange * scalingFactor) / 2),
-                    y:
-                        -((y - yMin) * scalingFactor -
-                        (yRange * scalingFactor) / 2),
-                    // rings: Math.ceil(maxAge / increase / 5), // This do not corresponds to timeline
-                    rings: Math.ceil(maxAge / increase),
-                    maxAge: maxAge,
-                    year,
-                    color: getColorForClass(className),
-                };
-            })
-            .filter(Boolean);
-    }
-
-    $: if (svg && viewType) {
-        nodes = getCoordinates();
-        initializeSimulation(nodes);
-    }
-
-    function initializeSimulation(nodes) {
-        let tickCount = 0;
-        simulation = d3
-            .forceSimulation(nodes)
-            .force("center", d3.forceCenter(2, 2))
-            // .force(
-            //     "collide",
-            //     d3
-            //         .forceCollide((d) => {
-            //             return (
-            //                 reducedBaseRadius +
-            //                 d.maxAge * increase +
-            //                 reducedRingSpacing
-            //             );
-            //         })
-            //         .strength(1),
-            // )
-            .force(
-                "anchor",
-                d3
-                    .forceX((d) => centerX + (d.x - centerX) * scalingFactor)
-                    .strength(0.4),
-            )
-            .force(
-                "anchorY",
-                d3
-                    .forceY((d) => centerY + (d.y - centerY) * scalingFactor)
-                    .strength(0.4),
-            )
-            .on("tick", () => {
-                tickCount++;
-                if (tickCount >= 200) {
-                    // loading = false;
-                    ticked();
-                } else {
-                    loading = true;
-                }
-            })
-            .on("end", () => {
-                loading = false;
-                ticked();
-                // simulation.stop();
-            });
-    }
-
-    function ticked() {
-        d3.select(svg)
-            .selectAll("g.node")
-            .data(nodes)
-            .join("g")
-            .attr("class", "node")
-            .attr("transform", (d) => `translate(${d.x},${d.y})`);
-    }
-
-    onMount(() => {
-        nodes = getCoordinates();
-        initializeSimulation(nodes);
-    });
+  onMount(() => {
+    const zoom = d3
+      .zoom()
+      .scaleExtent([0.5, 10])
+      .on("zoom", (event) => {
+        transform = event.transform;
+      });
+    d3.select(svg).call(zoom);
+  });
 </script>
 
-<svg bind:this={svg} {width} {height}>
-    {#if svg && nodes}
-        <g
-            transform="translate({svg?.clientWidth / 2}, {svg?.clientHeight /
-                2}) scale(0.01)"
-        >
-            {#each nodes as node}
-                <g class="node">
-                    <!-- <circle
-                            r={node.maxAge}
-                            fill="none"
-                            stroke={node.color}
-                        /> -->
-                    {#if currentYear >= node.year}
-                        <!-- {#each Array(node.rings) as _, i} -->
-                        {#each Array(Math.min(Math.ceil(currentYear - node.year), node.rings)) as _, i}
-                            <circle
-                                r={reducedBaseRadius +
-                                    i *
-                                        increase *
-                                        ((node.maxAge - reducedBaseRadius) /
-                                            node.rings)}
-                                fill="none"
-                                stroke={node.color}
-                                class="inner-ring"
-                                
-                            />
-                        {/each}
-                    {/if}
-                </g>
-            {/each}
-        </g>
-    {/if}
+<svg bind:this={svg} style="width: 100%; height: 100vh;">
+  <g transform="translate({transform.x}, {transform.y}) scale({transform.k})">
+    {#each nodes as node (node.id)}
+      <g class="node" transform="translate({node.x}, {node.y})">
+        {#if node.numRings > 0}
+          {#each Array(node.numRings) as _, i}
+            <circle
+              r={innerRadius + i * ringWidth}
+              fill="none"
+              stroke={node.color}
+              stroke-width="0.2"
+            />
+          {/each}
+        {:else}
+          <circle
+            r={innerRadius}
+            fill="none"
+            stroke={node.color}
+            stroke-width="0.2"
+          />
+        {/if}
+      </g>
+    {/each}
+  </g>
 </svg>
 
-{#if loading}
-    <div class="loading">Loading...</div>
-{/if}
-
-<Legend {classColorMapping} />
-
-
-
-
-
-
 <style>
-    svg {
-        width: 100%;
-        height: 100vh;
-    }
-
-    circle {
-        stroke-width: 1;
-        /* fill-opacity: .5; */
-    }
-
-    .loading {
-        width: 100vw;
-        height: 100vh;
-        color: white;
-        background-color: black;
-        position: absolute;
-        top: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
+  svg {
+    width: 100%;
+    height: 100vh;
+  }
+  .node circle {
+    pointer-events: none;
+  }
 </style>
