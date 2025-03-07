@@ -13,9 +13,9 @@
   let transform = d3.zoomIdentity;
 
   const innerRadius = 1;
-  const ringWidth = 2;
-  const collisionMargin = 2;
-  const maxDisplayRings = 5;
+  const ringWidth = 1;
+  const collisionMargin = 1;
+  const maxDisplayRings = 6;
   const maxOuterRadius = innerRadius + (maxDisplayRings - 1) * ringWidth;
 
   function getColorForData(row) {
@@ -186,7 +186,7 @@
               d={getCurvePath(node, highlightedNodes[i + 1])}
               fill="none"
               stroke="red"
-              stroke-width="1"
+              stroke-width="0.2"
               marker-end="url(#arrowhead)"
             />
           {/if}
