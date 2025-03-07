@@ -2,10 +2,10 @@
   export let classColorMapping;
 
   const classNames = Object.keys(classColorMapping);
-  const maxAge = 40; // Maximum age to be represented
-  const numRings = 4; // Number of rings in the infographic
+  const maxAge = 40;
+  const numRings = 4;
   const reducedBaseRadius = 10;
-  const ringSpacing = 20; // 10 years per ring
+  const ringSpacing = 20;
 </script>
 
 <div class="legend-container">
@@ -32,14 +32,25 @@
         />
         {#if i > 0}
           <text
-            x="0"
+            x="25"
             y={-(reducedBaseRadius + i * ringSpacing)}
-            dy="1.6em"
+            dy="1.2em"
             text-anchor="middle"
             fill="black"
             font-size="10"
           >
             {i * 10} years
+          </text>
+        {:else}
+          <text
+            x="25"
+            y={-(reducedBaseRadius + i * ringSpacing)}
+            dy="1.2em"
+            text-anchor="middle"
+            fill="black"
+            font-size="10"
+          >
+            {1} year
           </text>
         {/if}
       {/each}
