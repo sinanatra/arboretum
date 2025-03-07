@@ -90,7 +90,7 @@
         d3.forceCollide((d) => d.outerRadius + collisionMargin)
       )
       .stop();
-    // for (let i = 0; i < 10; i++) simulation.tick();
+    for (let i = 0; i < 300; i++) simulation.tick();
   }
 
   $: highlightedNodes = [];
