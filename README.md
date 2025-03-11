@@ -26,3 +26,35 @@ Deploy with:
 ```bash
 npm run deploy
 ```
+
+
+```
+# export the data from OSM
+[out:json][timeout:25];
+(
+  // Main roads: primary, secondary, tertiary
+  way["highway"~"^(primary|secondary|tertiary)$"]({{bbox}});
+  
+  // Local roads: residential, unclassified, living_street
+  way["highway"~"^(residential|unclassified|living_street|service)$"]({{bbox}});
+ 
+    way["leisure"="park"]({{bbox}});
+  relation["leisure"="park"]({{bbox}});
+  
+  // Ponds (water bodies tagged as ponds)
+  way["natural"="water"]["water"="pond"]({{bbox}});
+  relation["natural"="water"]["water"="pond"]({{bbox}});
+  
+  // Rivers
+  way["waterway"="river"]({{bbox}});
+  
+  // Trainlines
+  way["railway"="rail"]({{bbox}});
+
+);
+out body;
+>;
+out skel qt;
+
+
+```

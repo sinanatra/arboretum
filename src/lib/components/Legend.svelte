@@ -69,6 +69,7 @@
     padding: 5px;
     font-size: 12px;
     color: black;
+    background-color: white;
   }
 
   .legend {

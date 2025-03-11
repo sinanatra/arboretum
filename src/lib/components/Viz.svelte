@@ -1,10 +1,10 @@
 <script>
   import { onMount } from "svelte";
   import * as d3 from "d3";
+  import BaseMap from "./BaseMap.svelte";
 
   export let data = [];
   export let currentYear;
-
   export let selectedCuratorData = null;
 
   let svg;
@@ -12,18 +12,24 @@
   let xScale, yScale;
   let transform = d3.zoomIdentity;
 
-  const innerRadius = 1;
-  const ringWidth = 1;
-  const collisionMargin = 1;
-  const maxDisplayRings = 6;
-  const maxOuterRadius = innerRadius + (maxDisplayRings - 1) * ringWidth;
+  const baseInnerRadius = 1;
+  const baseRingWidth = 1;
+  const maxDisplayRings = 10;
+  const baseMaxOuterRadius =
+    baseInnerRadius + (maxDisplayRings - 1) * baseRingWidth;
+  const desiredCellSize = 5;
+  const scaleFactor = desiredCellSize / 2 / baseMaxOuterRadius;
+
+  const innerRadius = baseInnerRadius * scaleFactor;
+  const ringWidth = baseRingWidth * scaleFactor;
+  const maxOuterRadius = baseMaxOuterRadius * scaleFactor;
+  const cellSize = desiredCellSize;
 
   function getColorForData(row) {
-    return "black";
+    return "DarkSeaGreen";
   }
 
-  function computeNodes() {
-    if (!data || !svg || currentYear === undefined) return [];
+  function computeScales() {
     const svgWidth = svg.clientWidth;
     const svgHeight = svg.clientHeight;
     const xValues = data
@@ -32,41 +38,51 @@
     const yValues = data
       .map((d) => parseFloat(d.LATITUDE))
       .filter((v) => !isNaN(v));
-    const xMin = d3.min(xValues);
-    const xMax = d3.max(xValues);
-    const yMin = d3.min(yValues);
-    const yMax = d3.max(yValues);
+    let xMin = d3.min(xValues);
+    let xMax = d3.max(xValues);
+    let yMin = d3.min(yValues);
+    let yMax = d3.max(yValues);
+
+    const xMargin = (xMax - xMin) * 0.2;
+    const yMargin = (yMax - yMin) * 0.2;
+    xMin -= xMargin;
+    xMax += xMargin;
+    yMin -= yMargin;
+    yMax += yMargin;
+
     xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, svgWidth]);
     yScale = d3.scaleLinear().domain([yMin, yMax]).range([svgHeight, 0]);
+  }
 
+  function computeNodes() {
+    if (!data || !svg || currentYear === undefined) return [];
+    computeScales();
     const computed = data
       .map((row, i) => {
         const x = parseFloat(row.LONGITUDE);
         const y = parseFloat(row.LATITUDE);
         const accYear = parseInt(row.ACC_YR);
         const lastDate = parseInt(row.last_date);
-
         if (isNaN(x) || isNaN(y) || isNaN(accYear) || isNaN(lastDate))
           return null;
-
-        if (currentYear > lastDate) return null;
 
         const maxRings = Math.floor((lastDate - accYear) / 10);
         let numRings = 0;
         if (currentYear >= accYear) {
           numRings = Math.floor((currentYear - accYear) / 10);
-          if (numRings > maxRings) numRings = maxRings;
           numRings = Math.min(numRings, maxDisplayRings);
         }
         let outerRadius =
           numRings > 0 ? innerRadius + (numRings - 1) * ringWidth : innerRadius;
         outerRadius = Math.min(outerRadius, maxOuterRadius);
-        const x0 = xScale(x);
-        const y0 = yScale(y);
+        const rawX = xScale(x);
+        const rawY = yScale(y);
+        const col = Math.floor(rawX / cellSize);
+        const rowGrid = Math.floor(rawY / cellSize);
+        const x0 = col * cellSize + cellSize / 2;
+        const y0 = rowGrid * cellSize + cellSize / 2;
         return {
           id: row.PLANTID ? row.PLANTID : i,
-          x0,
-          y0,
           x: x0,
           y: y0,
           accYear,
@@ -80,23 +96,21 @@
     return computed;
   }
 
-  function runSimulation(nodesArray) {
-    const simulation = d3
-      .forceSimulation(nodesArray)
-      .force("x", d3.forceX((d) => d.x0).strength(0.8))
-      .force("y", d3.forceY((d) => d.y0).strength(0.8))
-      .force(
-        "collide",
-        d3.forceCollide((d) => d.outerRadius + collisionMargin)
-      )
-      .stop();
-    for (let i = 0; i < 300; i++) simulation.tick();
+  onMount(() => {
+    const zoom = d3
+      .zoom()
+      .scaleExtent([1, 14])
+      .on("zoom", (event) => {
+        transform = event.transform;
+      });
+    d3.select(svg).call(zoom);
+  });
+
+  $: if (data && svg && currentYear !== undefined) {
+    nodes = computeNodes();
   }
 
   $: highlightedNodes = [];
-
-  $: console.log(selectedCuratorData);
-
   $: if (selectedCuratorData && selectedCuratorData.PlantDates) {
     let sortedDates = [...selectedCuratorData.PlantDates].sort(
       (a, b) => a.Date - b.Date
@@ -126,25 +140,12 @@
     const cy = my + uy * offset;
     return `M ${p1.x} ${p1.y} Q ${cx} ${cy} ${p2.x} ${p2.y}`;
   }
-
-  onMount(() => {
-    const zoom = d3
-      .zoom()
-      .scaleExtent([0.5, 10])
-      .on("zoom", (event) => {
-        transform = event.transform;
-      });
-    d3.select(svg).call(zoom);
-  });
-
-  $: if (data && svg && currentYear !== undefined) {
-    nodes = computeNodes();
-    runSimulation(nodes);
-  }
 </script>
 
 <svg bind:this={svg} style="width: 100%; height: 100vh;">
   <g transform="translate({transform.x}, {transform.y}) scale({transform.k})">
+    <BaseMap {transform} {xScale} {yScale} />
+
     {#each nodes as node (node.id)}
       <g class="node" transform="translate({node.x}, {node.y})">
         {#if node.numRings > 0}
@@ -153,7 +154,7 @@
               r={innerRadius + i * ringWidth}
               fill="none"
               stroke={node.color}
-              stroke-width="0.2"
+              stroke-width="0.1"
             />
           {/each}
         {:else}
@@ -161,7 +162,7 @@
             r={innerRadius}
             fill="none"
             stroke={node.color}
-            stroke-width="0.2"
+            stroke-width="0.1"
           />
         {/if}
       </g>
@@ -171,22 +172,23 @@
         <defs>
           <marker
             id="arrowhead"
-            markerWidth="10"
-            markerHeight="7"
-            refX="0"
-            refY="3.5"
+            markerWidth="6"
+            markerHeight="4"
+            refX="3"
+            refY="2"
             orient="auto"
           >
-            <polygon points="0 0, 10 3.5, 0 7" fill="red" />
+           <polygon points="0 0, 6 2, 0 4" fill="blue" />
           </marker>
         </defs>
+
         {#each highlightedNodes.slice(0, highlightedNodes.length - 1) as node, i}
           {#if highlightedNodes[i + 1]}
             <path
               d={getCurvePath(node, highlightedNodes[i + 1])}
               fill="none"
-              stroke="red"
-              stroke-width="0.2"
+              stroke="blue"
+              stroke-width=".5"
               marker-end="url(#arrowhead)"
             />
           {/if}
@@ -201,10 +203,10 @@
     width: 100%;
     height: 100vh;
   }
-  .node circle {
-    pointer-events: none;
-  }
-  .curator-path path {
+  
+  .node circle,
+  .curator-path path,
+  path {
     pointer-events: none;
   }
 </style>
