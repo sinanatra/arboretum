@@ -4,7 +4,6 @@
   import Viz from "@components/Viz.svelte";
   import Legend from "@components/Legend.svelte";
   import CuratorSelector from "@components/CuratorSelector.svelte";
-  import MapLayer from "@components/Map.svelte";
 
   let data = [];
   let curatorData = [];
@@ -49,12 +48,12 @@
 {#if data.length > 0 && curatorData.length > 0}
   <div class="container">
     <div class="main">
-      <Header
+      <!-- <Header
         on:yearChange={handleYearChange}
         {currentYear}
         {minYear}
         {maxYear}
-      />
+      /> -->
       {#if data.length > 0}
         <Viz {data} {currentYear} {selectedCuratorData} />
         <Legend {classColorMapping} />
@@ -65,6 +64,11 @@
 {/if}
 
 <style>
+  :global(body) {
+    margin: 0;
+    padding: 0;
+  }
+
   .container {
     display: flex;
     height: 100vh;
