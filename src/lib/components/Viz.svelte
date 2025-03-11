@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import * as d3 from "d3";
-  import BaseMap from "./BaseMap1.svelte";
+  import BaseMap from "./BaseMap.svelte";
 
   export let data = [];
   export let currentYear;
