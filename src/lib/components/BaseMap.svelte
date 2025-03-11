@@ -8,13 +8,13 @@
   export let width = window.innerWidth;
   export let height = window.innerHeight;
 
-  export let gridSize = 2.5;
+  export let gridSize = 5;
 
   let geoData = null;
   let gContainer;
   let gridCells = [];
 
-  const streetBufferDistance = 5;
+  const streetBufferDistance = 10;
 
   onMount(async () => {
     try {
@@ -166,6 +166,6 @@
   }
 
   rect.pixel.street {
-    fill: rgba(244, 244, 244, 0.39);
+    fill: #f8f8f8;
   }
 </style>

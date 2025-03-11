@@ -188,7 +188,7 @@
               d={getCurvePath(node, highlightedNodes[i + 1])}
               fill="none"
               stroke="blue"
-              stroke-width=".1"
+              stroke-width=".5"
               marker-end="url(#arrowhead)"
             />
           {/if}
