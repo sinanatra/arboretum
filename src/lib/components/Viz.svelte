@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import * as d3 from "d3";
-  import BaseMap from "./BaseMap.svelte";
+  import BaseMap from "./BaseMap1.svelte";
 
   export let data = [];
   export let currentYear;
@@ -11,6 +11,7 @@
   let nodes = [];
   let xScale, yScale;
   let transform = d3.zoomIdentity;
+  let zoom;
 
   const baseInnerRadius = 1;
   const baseRingWidth = 1;
@@ -19,7 +20,6 @@
     baseInnerRadius + (maxDisplayRings - 1) * baseRingWidth;
   const desiredCellSize = 5;
   const scaleFactor = desiredCellSize / 2 / baseMaxOuterRadius;
-
   const innerRadius = baseInnerRadius * scaleFactor;
   const ringWidth = baseRingWidth * scaleFactor;
   const maxOuterRadius = baseMaxOuterRadius * scaleFactor;
@@ -42,16 +42,14 @@
     let xMax = d3.max(xValues);
     let yMin = d3.min(yValues);
     let yMax = d3.max(yValues);
-
     const xMargin = (xMax - xMin) * 0.2;
     const yMargin = (yMax - yMin) * 0.2;
     xMin -= xMargin;
     xMax += xMargin;
     yMin -= yMargin;
     yMax += yMargin;
-
-    xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, svgWidth]);
-    yScale = d3.scaleLinear().domain([yMin, yMax]).range([svgHeight, 0]);
+    xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, svg.clientWidth]);
+    yScale = d3.scaleLinear().domain([yMin, yMax]).range([svg.clientHeight, 0]);
   }
 
   function computeNodes() {
@@ -65,7 +63,6 @@
         const lastDate = parseInt(row.last_date);
         if (isNaN(x) || isNaN(y) || isNaN(accYear) || isNaN(lastDate))
           return null;
-
         const maxRings = Math.floor((lastDate - accYear) / 10);
         let numRings = 0;
         if (currentYear >= accYear) {
@@ -97,13 +94,26 @@
   }
 
   onMount(() => {
-    const zoom = d3
+    zoom = d3
       .zoom()
-      .scaleExtent([1, 14])
+      .scaleExtent([2, 14])
       .on("zoom", (event) => {
         transform = event.transform;
       });
     d3.select(svg).call(zoom);
+
+    const svgWidth = svg.clientWidth;
+    const svgHeight = svg.clientHeight;
+    const initialScale = 2;
+
+    const tx = svgWidth / 2 - initialScale * (svgWidth / 1.8);
+    const ty = svgHeight / 2 - initialScale * (svgHeight / 2.5);
+    
+    const initialTransform = d3.zoomIdentity
+      .translate(tx, ty)
+      .scale(initialScale);
+    d3.select(svg).call(zoom.transform, initialTransform);
+    transform = initialTransform;
   });
 
   $: if (data && svg && currentYear !== undefined) {
@@ -145,7 +155,6 @@
 <svg bind:this={svg} style="width: 100%; height: 100vh;">
   <g transform="translate({transform.x}, {transform.y}) scale({transform.k})">
     <BaseMap {transform} {xScale} {yScale} />
-
     {#each nodes as node (node.id)}
       <g class="node" transform="translate({node.x}, {node.y})">
         {#if node.numRings > 0}
@@ -181,7 +190,6 @@
             <polygon points="0 0, 6 2, 0 4" fill="blue" />
           </marker>
         </defs>
-
         {#each highlightedNodes.slice(0, highlightedNodes.length - 1) as node, i}
           {#if highlightedNodes[i + 1]}
             <path
@@ -203,15 +211,9 @@
     width: 100%;
     height: 100vh;
   }
-
   .node circle,
   .curator-path path,
   path {
     pointer-events: none;
-  }
-
-  .curator-path {
-    mix-blend-mode: multiply;
-    opacity: 0.5;
   }
 </style>

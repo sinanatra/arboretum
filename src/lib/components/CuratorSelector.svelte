@@ -46,11 +46,11 @@
         <div class="curator-name">{curator.CuratorName}</div>
         {#if curator.PlantDates && curator.PlantDates.length > 0}
           {@const stats = getStats(curator)}
-          <svg class="histogram" width="200" height="40">
+          <svg class="histogram" width="320" height="40">
             <line
               x1="10"
               y1="20"
-              x2="190"
+              x2="280"
               y2="20"
               stroke="#ccc"
               stroke-width="2"
@@ -70,7 +70,7 @@
 
             <text x="10" y="15" font-size="10" fill="#333">{stats.minDate}</text
             >
-            <text x="190" y="15" font-size="10" fill="#333" text-anchor="end"
+            <text x="280" y="15" font-size="10" fill="#333" text-anchor="end"
               >{stats.maxDate}</text
             >
 
@@ -92,7 +92,7 @@
 
 <style>
   .curator-sidebar {
-    width: 220px;
+    width: 320px;
     background: #f9f9f9;
     border-right: 1px solid #ddd;
     overflow-y: auto;

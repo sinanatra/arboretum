@@ -8,12 +8,10 @@
   export let width = window.innerWidth;
   export let height = window.innerHeight;
 
-  
-  export let gridSize = 2.5;
-  export let streetBufferDistance = 5;
+  export let gridSize = 4;
+  export let streetBufferDistance = 10;
 
   let geoData = null;
-  let gContainer;
   let gridCells = [];
   let isProcessing = false;
 
@@ -28,8 +26,11 @@
     }
   });
 
-  async function generateGridInChunks() {
-    if (!geoData || !xScale || !yScale) return;
+  async function generateGrid() {
+    if (!geoData || !xScale || !yScale) {
+      console.warn("Missing xScale/yScale/geoData");
+      return;
+    }
 
     gridCells = [];
     isProcessing = true;
@@ -65,151 +66,153 @@
       })
       .filter((f) => f);
 
-    let currentRow = 0;
+    console.log("Starting grid generation...");
 
-    function processChunk(deadline) {
-      const startTime = performance.now();
+    for (let col = 0; col < cols; col++) {
+      for (let row = 0; row < rows; row++) {
+        const x = col * gridSize;
+        const y = row * gridSize;
 
-      const batchSize = 10; 
-      while (
-        currentRow < rows &&
-        (deadline?.timeRemaining() > 0 || performance.now() - startTime < 8)
-      ) {
-        for (let col = 0; col < cols; col++) {
-          const x = col * gridSize;
-          const y = currentRow * gridSize;
+        const lon = xScale.invert(x + gridSize / 2);
+        const lat = yScale.invert(y + gridSize / 2);
+        const pt = turf.point([lon, lat]);
 
-          const lon = xScale.invert(x + gridSize / 2);
-          const lat = yScale.invert(y + gridSize / 2);
-          const pt = turf.point([lon, lat]);
+        let cellType = null;
 
-          let cellType = null;
+        for (let line of bufferedLines) {
+          if (turf.booleanPointInPolygon(pt, line)) {
+            cellType = "street";
+            break;
+          }
+        }
 
-          for (let line of bufferedLines) {
-            if (turf.booleanPointInPolygon(pt, line)) {
-              cellType = "street";
+        if (!cellType) {
+          for (let area of areaFeatures) {
+            if (turf.booleanPointInPolygon(pt, area)) {
+              if (area.properties?.leisure === "park") {
+                cellType = "park";
+              } else if (
+                area.properties?.natural === "water" ||
+                area.properties?.waterway
+              ) {
+                cellType = "water";
+              } else {
+                cellType = "other";
+              }
               break;
             }
           }
-
-          if (!cellType) {
-            for (let area of areaFeatures) {
-              if (turf.booleanPointInPolygon(pt, area)) {
-                if (area.properties?.leisure === "park") {
-                  cellType = "park";
-                } else if (
-                  area.properties?.natural === "water" ||
-                  area.properties?.waterway
-                ) {
-                  cellType = "water";
-                } else {
-                  cellType = "other";
-                }
-                break;
-              }
-            }
-          }
-
-          if (cellType) {
-            gridCells = [...gridCells, { x, y, type: cellType }];
-          }
         }
 
-        currentRow++;
-      }
+        if (cellType) {
+          const lonMin = xScale.invert(x);
+          const lonMax = xScale.invert(x + gridSize);
+          const latMin = yScale.invert(y + gridSize);
+          const latMax = yScale.invert(y);
 
-      if (currentRow < rows) {
-        if (window.requestIdleCallback) {
-          requestIdleCallback(processChunk);
-        } else {
-          requestAnimationFrame(() => processChunk());
+          const coordinates = [
+            [
+              [lonMin, latMin],
+              [lonMin, latMax],
+              [lonMax, latMax],
+              [lonMax, latMin],
+              [lonMin, latMin],
+            ],
+          ];
+
+          const feature = {
+            type: "Feature",
+            geometry: {
+              type: "Polygon",
+              coordinates: coordinates,
+            },
+            properties: {
+              type: cellType,
+            },
+          };
+
+          gridCells.push(feature);
         }
-      } else {
-        isProcessing = false;
-        console.log("Grid generation complete!");
       }
     }
 
-    if (window.requestIdleCallback) {
-      requestIdleCallback(processChunk);
-    } else {
-      requestAnimationFrame(() => processChunk());
-    }
+    isProcessing = false;
+    console.log(`Grid generated! ${gridCells.length} cells.`);
   }
 
-  function exportGridAsJSON() {
-    const json = JSON.stringify(gridCells);
+  function exportGridAsGeoJSON() {
+    if (!gridCells.length) {
+      console.warn("No grid cells to export!");
+      return;
+    }
+
+    const geojson = {
+      type: "FeatureCollection",
+      features: gridCells,
+    };
+
+    const json = JSON.stringify(geojson);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = `pixelated-grid-g${gridSize}-b${streetBufferDistance}.json`;
+    link.download = `pixelated_grid_${gridSize}grid_${streetBufferDistance}buffer.geojson`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
+    console.log("Export complete!");
   }
 </script>
 
-<div>
-  <button on:click={generateGridInChunks} disabled={isProcessing}>
+<div class="controls">
+  <button on:click={generateGrid} disabled={isProcessing}>
     {isProcessing ? "Processing..." : "Generate Grid"}
   </button>
-
   <button
-    on:click={exportGridAsJSON}
-    disabled={gridCells.length === 0 || isProcessing}
+    on:click={exportGridAsGeoJSON}
+    disabled={!gridCells.length || isProcessing}
   >
-    Export Grid JSON
+    Export GeoJSON
   </button>
 </div>
 
 {#if gridCells.length > 0}
-  <g bind:this={gContainer}>
-    {#each gridCells as cell (cell.x + "-" + cell.y)}
-      <rect
-        x={cell.x}
-        y={cell.y}
-        width={gridSize}
-        height={gridSize}
-        class={"pixel " + cell.type}
-      />
-    {/each}
-  </g>
+  <p>{gridCells.length} cells generated. Ready to export!</p>
 {/if}
 
 <style>
-  div {
+  .controls {
     position: fixed;
     top: 100px;
-    left: 100px;
-  }
-  rect.pixel {
-    stroke: none;
-  }
-
-  rect.pixel.park {
-    fill: #e0e0e0;
-  }
-
-  rect.pixel.water {
-    fill: #e0efff;
-  }
-
-  rect.pixel.other {
-    fill: #dddddd;
-  }
-
-  rect.pixel.street {
-    fill: rgba(236, 236, 236, 0.39);
+    left: 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 10;
   }
 
   button {
-    margin-right: 1rem;
-    margin-bottom: 1rem;
+    display: block;
+    margin-bottom: 0.5rem;
     padding: 0.5rem 1rem;
     font-size: 1rem;
+    background: #444;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+  }
+
+  p {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #333;
   }
 </style>
