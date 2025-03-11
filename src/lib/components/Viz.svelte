@@ -178,7 +178,7 @@
             refY="2"
             orient="auto"
           >
-           <polygon points="0 0, 6 2, 0 4" fill="blue" />
+            <polygon points="0 0, 6 2, 0 4" fill="blue" />
           </marker>
         </defs>
 
@@ -188,7 +188,7 @@
               d={getCurvePath(node, highlightedNodes[i + 1])}
               fill="none"
               stroke="blue"
-              stroke-width=".5"
+              stroke-width=".1"
               marker-end="url(#arrowhead)"
             />
           {/if}
@@ -203,10 +203,15 @@
     width: 100%;
     height: 100vh;
   }
-  
+
   .node circle,
   .curator-path path,
   path {
     pointer-events: none;
+  }
+
+  .curator-path {
+    mix-blend-mode: multiply;
+    opacity: 0.5;
   }
 </style>
