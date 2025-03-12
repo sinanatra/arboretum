@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import Header from "@components/Header.svelte";
   import Viz from "@components/Viz.svelte";
-  import Legend from "@components/Legend.svelte";
+
   import CuratorSelector from "@components/CuratorSelector.svelte";
 
   let data = [];
@@ -35,14 +35,6 @@
   function handleCuratorChange(event) {
     selectedCuratorData = event.detail.selectedCuratorData;
   }
-
-  const classColorMapping = {
-    Eudicot: "#d7191c",
-    Ginkgoopsida: "#fdae61",
-    Monocot: "#ffffbf",
-    Lycopodiopsida: "#abdda4",
-    Pinopsida: "#2b83ba",
-  };
 </script>
 
 {#if data.length > 0 && curatorData.length > 0}
@@ -56,7 +48,6 @@
       /> -->
       {#if data.length > 0}
         <Viz {data} {currentYear} {selectedCuratorData} />
-        <Legend {classColorMapping} />
       {/if}
     </div>
     <CuratorSelector {curatorData} on:curatorChange={handleCuratorChange} />

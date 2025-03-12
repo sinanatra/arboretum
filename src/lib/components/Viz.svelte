@@ -25,10 +25,6 @@
   const maxOuterRadius = baseMaxOuterRadius * scaleFactor;
   const cellSize = desiredCellSize;
 
-  function getColorForData(row) {
-    return "DarkSeaGreen";
-  }
-
   function computeScales() {
     const svgWidth = svg.clientWidth;
     const svgHeight = svg.clientHeight;
@@ -61,9 +57,11 @@
         const y = parseFloat(row.LATITUDE);
         const accYear = parseInt(row.ACC_YR);
         const lastDate = parseInt(row.last_date);
-        if (isNaN(x) || isNaN(y) || isNaN(accYear) || isNaN(lastDate))
-          return null;
+
+        if (isNaN(x) || isNaN(y) || isNaN(accYear)) return null;
+
         const maxRings = Math.floor((lastDate - accYear) / 10);
+
         let numRings = 0;
         if (currentYear >= accYear) {
           numRings = Math.floor((currentYear - accYear) / 10);
@@ -86,7 +84,6 @@
           lastDate,
           numRings,
           outerRadius,
-          color: getColorForData(row),
         };
       })
       .filter(Boolean);
@@ -108,7 +105,7 @@
 
     const tx = svgWidth / 2 - initialScale * (svgWidth / 1.8);
     const ty = svgHeight / 2 - initialScale * (svgHeight / 2.5);
-    
+
     const initialTransform = d3.zoomIdentity
       .translate(tx, ty)
       .scale(initialScale);
@@ -152,7 +149,7 @@
   }
 </script>
 
-<svg bind:this={svg} style="width: 100%; height: 100vh;">
+<svg bind:this={svg}>
   <g transform="translate({transform.x}, {transform.y}) scale({transform.k})">
     <BaseMap {transform} {xScale} {yScale} />
     {#each nodes as node (node.id)}
@@ -162,17 +159,11 @@
             <circle
               r={innerRadius + i * ringWidth}
               fill="none"
-              stroke={node.color}
-              stroke-width="0.1"
+              class="node-ring"
             />
           {/each}
         {:else}
-          <circle
-            r={innerRadius}
-            fill="none"
-            stroke={node.color}
-            stroke-width="0.1"
-          />
+          <circle r={innerRadius} fill="none" class="node-ring" />
         {/if}
       </g>
     {/each}
@@ -187,7 +178,7 @@
             refY="2"
             orient="auto"
           >
-            <polygon points="0 0, 6 2, 0 4" fill="blue" />
+            <polygon points="0 0, 6 2, 0 4" class="arrowhead" />
           </marker>
         </defs>
         {#each highlightedNodes.slice(0, highlightedNodes.length - 1) as node, i}
@@ -195,8 +186,7 @@
             <path
               d={getCurvePath(node, highlightedNodes[i + 1])}
               fill="none"
-              stroke="blue"
-              stroke-width=".5"
+              class="curator-path-line"
               marker-end="url(#arrowhead)"
             />
           {/if}
@@ -211,9 +201,24 @@
     width: 100%;
     height: 100vh;
   }
+
   .node circle,
   .curator-path path,
   path {
     pointer-events: none;
+  }
+
+  .node-ring {
+    stroke: rgb(255, 141, 1);
+    stroke-width: 0.1;
+  }
+
+  .curator-path-line {
+    stroke: rgb(0, 208, 255);
+    stroke-width: 0.5;
+  }
+
+  .arrowhead {
+    fill: rgb(0, 208, 255);
   }
 </style>

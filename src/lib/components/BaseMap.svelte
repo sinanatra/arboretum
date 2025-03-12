@@ -13,7 +13,7 @@
 
   onMount(async () => {
     try {
-      const response = await fetch("/pixelated.geojson");
+      const response = await fetch("pixelated.geojson");
       geoData = await response.json();
       console.log(
         "Loaded pixelated geojson:",
@@ -46,7 +46,6 @@
 {/if}
 
 <style>
-  /* Base styling for the pixelated basemap */
   path.pixel {
     stroke: none;
     pointer-events: none;

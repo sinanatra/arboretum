@@ -3,26 +3,14 @@
 
   const classNames = Object.keys(classColorMapping);
   const maxAge = 40;
-  const numRings = 4;
+  const numRings = 20;
   const reducedBaseRadius = 10;
   const ringSpacing = 20;
 </script>
 
 <div class="legend-container">
-  <!-- <div class="legend">
-        {#each classNames as className}
-            <div class="legend-item">
-                <div
-                    class="legend-color"
-                    style="background-color: {classColorMapping[className]};"
-                ></div>
-                <span>{className}</span>
-            </div>
-        {/each}
-    </div> -->
-
-  <svg class="infographic" width="150" height="120">
-    <g transform="translate(75, 60)">
+  <svg class="infographic" preserveAspectRatio="xMidYMid meet">
+    <g transform="translate(0,60)">
       {#each Array(numRings + 1) as _, i}
         <circle
           r={reducedBaseRadius + i * ringSpacing}
@@ -30,29 +18,16 @@
           stroke="#888"
           stroke-width="1"
         />
-        {#if i > 0}
-          <text
-            x="25"
-            y={-(reducedBaseRadius + i * ringSpacing)}
-            dy="1.2em"
-            text-anchor="middle"
-            fill="black"
-            font-size="10"
-          >
-            {i * 10} years
-          </text>
-        {:else}
-          <text
-            x="25"
-            y={-(reducedBaseRadius + i * ringSpacing)}
-            dy="1.2em"
-            text-anchor="middle"
-            fill="black"
-            font-size="10"
-          >
-            {1} year
-          </text>
-        {/if}
+        <text
+          x={reducedBaseRadius + i * ringSpacing + 20}
+          y={(i * ringSpacing) / 2 + 5}
+          dy="0.35em"
+          text-anchor="middle"
+          fill="black"
+          font-size="10"
+        >
+          {i === 0 ? "1 year" : `${i * 10} years`}
+        </text>
       {/each}
     </g>
   </svg>
@@ -62,37 +37,21 @@
   .legend-container {
     display: flex;
     flex-direction: column;
-    position: absolute;
+    /* position: absolute;
     bottom: 10px;
-    right: 10px;
-    border: 1px solid;
+    right: 10px; */
+    border-bottom: 1px solid;
     padding: 5px;
     font-size: 12px;
     color: black;
-    background-color: white;
+    /* background-color: white; */
   }
 
-  .legend {
-    display: flex;
-    flex-direction: column;
-    padding: 5px;
-    margin-bottom: 10px;
-    font-size: 12px;
+  circle {
+    stroke: rgb(255, 141, 1);
   }
 
-  .legend-item {
-    display: flex;
-    align-items: center;
+  text {
+    fill: black;
   }
-
-  .legend-color {
-    width: 10px;
-    height: 10px;
-    margin-right: 10px;
-  }
-
-  /* 
-  .infographic {
-    border: 1px dashed;
-  } */
 </style>

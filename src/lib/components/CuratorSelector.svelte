@@ -1,5 +1,6 @@
 <script>
   import { createEventDispatcher } from "svelte";
+  import Legend from "@components/Legend.svelte";
 
   import * as d3 from "d3";
 
@@ -34,9 +35,19 @@
     if (maxDate === minDate) return 100;
     return 10 + ((date - minDate) / (maxDate - minDate)) * 180;
   }
+
+  const classColorMapping = {
+    Eudicot: "#d7191c",
+    Ginkgoopsida: "#fdae61",
+    Monocot: "#ffffbf",
+    Lycopodiopsida: "#abdda4",
+    Pinopsida: "#2b83ba",
+  };
 </script>
 
 <aside class="curator-sidebar">
+  <Legend {classColorMapping} />
+
   <ul>
     {#each curators as curator (curator.CuratorName)}
       <li
@@ -61,11 +72,10 @@
                   cx={dateToX(d, stats.minDate, stats.maxDate)}
                   cy="20"
                   r="2"
-                  fill="blue"
                 />
               {/each}
             {:else}
-              <circle cx="100" cy="20" r="4" fill="blue" />
+              <circle cx="100" cy="20" r="4" />
             {/if}
 
             <text x="10" y="15" font-size="10" fill="#333">{stats.minDate}</text
@@ -75,7 +85,7 @@
             >
 
             <text
-              x="100"
+              x="140"
               y="35"
               font-size="10"
               fill="#333"
@@ -130,6 +140,7 @@
   }
   .histogram circle {
     transition: fill 0.3s;
+    fill: rgb(0, 208, 255);
   }
   .histogram circle:hover {
     fill: darkblue;
