@@ -8,8 +8,8 @@
   export let width = window.innerWidth;
   export let height = window.innerHeight;
 
-  export let gridSize = 4;
-  export let streetBufferDistance = 10;
+  export let gridSize = 5;
+  export let streetBufferDistance = 5;
 
   let geoData = null;
   let gridCells = [];
