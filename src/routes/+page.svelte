@@ -4,6 +4,7 @@
   import Viz from "@components/Viz.svelte";
 
   import CuratorSelector from "@components/CuratorSelector.svelte";
+  import { max } from "d3";
 
   let data = [];
   let curatorData = [];
@@ -50,7 +51,14 @@
         <Viz {data} {currentYear} {selectedCuratorData} />
       {/if}
     </div>
-    <CuratorSelector {curatorData} on:curatorChange={handleCuratorChange} />
+    {#if minYear && maxYear}
+      <CuratorSelector
+        {curatorData}
+        on:curatorChange={handleCuratorChange}
+        {minYear}
+        {maxYear}
+      />
+    {/if}
   </div>
 {/if}
 
