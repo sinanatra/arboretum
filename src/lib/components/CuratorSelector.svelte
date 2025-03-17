@@ -2,38 +2,41 @@
   import { createEventDispatcher } from "svelte";
   import Legend from "@components/Legend.svelte";
 
-  import * as d3 from "d3";
+  export let minYear;
+  export let maxYear;
 
   export let curatorData = [];
   export let initialCurator = "";
 
   const dispatch = createEventDispatcher();
 
+  function getMinDate(dates) {
+    return dates && dates.length > 0 ? Math.min(...dates) : Infinity;
+  }
+
   $: curators = curatorData
-    .slice()
-    .sort((a, b) => a.CuratorName.localeCompare(b.CuratorName));
+    .map((curator) => ({
+      ...curator,
+      minDate: getMinDate(curator.PlantDates?.map((pd) => pd.Date)),
+    }))
+    .sort((a, b) => a.minDate - b.minDate);
 
   $: selectedCurator =
-    initialCurator || (curators.length > 0 ? curators[0] : "");
+    initialCurator || (curators.length > 0 ? curators[0].CuratorName : "");
 
-  function selectCurator(curator) {
-    selectedCurator = curator;
+  function selectCurator(curatorName) {
+    selectedCurator = curatorName;
     const record = curatorData.find(
-      (r) => r.CuratorName.toLowerCase() === curator.toLowerCase()
+      (r) => r.CuratorName.toLowerCase() === curatorName.toLowerCase()
     );
     dispatch("curatorChange", { selectedCuratorData: record });
   }
 
-  function getStats(curator) {
-    const dates = curator.PlantDates.map((pd) => pd.Date);
-    const minDate = Math.min(...dates);
-    const maxDate = Math.max(...dates);
-    return { minDate, maxDate, count: dates.length, dates };
-  }
-
-  function dateToX(date, minDate, maxDate) {
-    if (maxDate === minDate) return 100;
-    return 10 + ((date - minDate) / (maxDate - minDate)) * 180;
+  function dateToX(date) {
+    if (maxYear === minYear) return 160;
+    const padding = 10;
+    const width = 300;
+    return padding + ((date - minYear) / (maxYear - minYear)) * width;
   }
 
   const classColorMapping = {
@@ -54,44 +57,29 @@
         on:click={() => selectCurator(curator.CuratorName)}
         class:selected={curator.CuratorName === selectedCurator}
       >
-        <div class="curator-name">{curator.CuratorName}</div>
         {#if curator.PlantDates && curator.PlantDates.length > 0}
-          {@const stats = getStats(curator)}
-          <svg class="histogram" width="320" height="40">
+          <svg class="histogram" width="320" height="25">
             <line
               x1="10"
-              y1="20"
-              x2="280"
-              y2="20"
+              y1="12"
+              x2="310"
+              y2="12"
               stroke="#ccc"
-              stroke-width="2"
+              stroke-width="1"
             />
-            {#if stats.maxDate !== stats.minDate}
-              {#each stats.dates as d}
-                <circle
-                  cx={dateToX(d, stats.minDate, stats.maxDate)}
-                  cy="20"
-                  r="2"
-                />
-              {/each}
-            {:else}
-              <circle cx="100" cy="20" r="4" />
-            {/if}
 
-            <text x="10" y="15" font-size="10" fill="#333">{stats.minDate}</text
-            >
-            <text x="280" y="15" font-size="10" fill="#333" text-anchor="end"
-              >{stats.maxDate}</text
-            >
+            {#each curator.PlantDates as pd}
+              <circle cx={dateToX(pd.Date)} cy="12" r="2" />
+            {/each}
 
-            <text
-              x="140"
-              y="35"
-              font-size="10"
-              fill="#333"
-              text-anchor="middle"
-            >
-              {stats.count} annotation{stats.count === 1 ? "" : "s"}
+            <text x="10" y="8" font-size="8" fill="#333">{minYear}</text>
+            <text x="310" y="8" font-size="8" fill="#333" text-anchor="end">
+              {maxYear}
+            </text>
+
+            <text x="160" y="23" font-size="8" fill="#333" text-anchor="middle">
+              {curator.PlantDates.length} annotation
+              {curator.PlantDates.length === 1 ? "" : "s"}
             </text>
           </svg>
         {/if}
@@ -114,8 +102,9 @@
     padding: 0;
     margin: 0;
   }
+
   .curator-sidebar li {
-    padding: 1em;
+    /* padding: 0.5em; */
     border-bottom: 1px solid #ccc;
     cursor: pointer;
     transition: background 0.3s;
@@ -124,27 +113,35 @@
   .curator-sidebar li:hover {
     background: #eee;
   }
+
   .curator-sidebar li.selected {
     background: #ddd;
     font-weight: bold;
   }
+
   .curator-name {
-    margin-bottom: 0.5em;
+    margin-bottom: 0.3em;
+    font-size: 0.9em;
   }
+
   .histogram {
     display: block;
-    margin-top: 0.5em;
+    /* margin-top: 0.3em; */
   }
+
   .histogram line {
-    stroke-dasharray: 4;
+    stroke-dasharray: 3;
   }
+
   .histogram circle {
     transition: fill 0.3s;
-    fill: rgb(0, 208, 255);
+    fill: var(--annotation-color, rgb(0, 208, 255));
   }
+
   .histogram circle:hover {
     fill: darkblue;
   }
+
   .histogram text {
     font-family: sans-serif;
   }
