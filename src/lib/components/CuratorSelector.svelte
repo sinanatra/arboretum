@@ -40,11 +40,14 @@
   }
 
   const classColorMapping = {
-    Eudicot: "#d7191c",
-    Ginkgoopsida: "#fdae61",
-    Monocot: "#ffffbf",
-    Lycopodiopsida: "#abdda4",
-    Pinopsida: "#2b83ba",
+    "herb. - flower": "#C2185B", // deep rose
+    "herb. - fruit": "#AD1457", // raspberry red
+    "herb. - vegetative": "#880E4F", // dark magenta
+    seed: "#D81B60", // strong pink
+    "herb. - twig/buds": "#E91E63", // vivid pink
+    "fruit colln": "#F06292", // light pink
+    "herb. - seedling": "#EC407A", // soft rosy pink
+    bark: "#B71C1C", // deep red
   };
 </script>
 
@@ -57,6 +60,9 @@
         on:click={() => selectCurator(curator.CuratorName)}
         class:selected={curator.CuratorName === selectedCurator}
       >
+        {#if curator.CuratorName === selectedCurator}
+          <p class="curator-name">{curator.CuratorName}</p>
+        {/if}
         {#if curator.PlantDates && curator.PlantDates.length > 0}
           <svg class="histogram" width="320" height="25">
             <line
@@ -69,7 +75,7 @@
             />
 
             {#each curator.PlantDates as pd}
-              <circle cx={dateToX(pd.Date)} cy="12" r="2" />
+              <circle cx={dateToX(pd.Date)} cy="12" r="2"> </circle>
             {/each}
 
             <text x="10" y="8" font-size="8" fill="#333">{minYear}</text>
@@ -78,8 +84,10 @@
             </text>
 
             <text x="160" y="23" font-size="8" fill="#333" text-anchor="middle">
-              {curator.PlantDates.length} annotation
-              {curator.PlantDates.length === 1 ? "" : "s"}
+              {curator.PlantDates.length} annotation{curator.PlantDates
+                .length === 1
+                ? ""
+                : "s"}
             </text>
           </svg>
         {/if}
@@ -90,7 +98,7 @@
 
 <style>
   .curator-sidebar {
-    width: 320px;
+    width: 330px;
     background: #f9f9f9;
     border-right: 1px solid #ddd;
     overflow-y: auto;
@@ -120,8 +128,11 @@
   }
 
   .curator-name {
+    margin: 0;
     margin-bottom: 0.3em;
     font-size: 0.9em;
+    text-align: center;
+    width: 100%;
   }
 
   .histogram {
@@ -135,7 +146,7 @@
 
   .histogram circle {
     transition: fill 0.3s;
-    fill: var(--annotation-color, rgb(0, 208, 255));
+    fill: var(--annotation-color, darkslateblue);
   }
 
   .histogram circle:hover {
