@@ -14,7 +14,7 @@
   let selectedCuratorData = null;
 
   onMount(async () => {
-    const res = await fetch("data/ArnArbPlantsGEO.json");
+    const res = await fetch("data/ArnArbPlantsinfo.json");
     data = await res.json();
     minYear = Math.min(...data.map((d) => parseInt(d.ACC_YR)));
     maxYear = Math.max(...data.map((d) => parseInt(d.ACC_YR)));
