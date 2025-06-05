@@ -7,6 +7,7 @@
 
   let data = [];
   let curatorData = [];
+  let curatorInfoData = [];
   let currentYear = 2011;
   let minYear;
   let maxYear;
@@ -30,6 +31,10 @@
       selectedCuratorData = curatorData[0];
     }
 
+    const curatorBio = await fetch("data/Curatorinfo.json");
+    curatorInfoData = await curatorBio.json();
+    console.log(curatorInfoData)
+
     const geoRes = await fetch("map/grid_3px.geojson");
     const geoData = await geoRes.json();
     geoFeatures = geoData.features;
@@ -48,7 +53,7 @@
   }
 </script>
 
-{#if data.length > 0 && curatorData.length > 0 && projection}
+{#if data.length > 0 && curatorData.length > 0 && curatorInfoData.length > 0 && projection}
   <div class="container">
     <div class="main">
       <Viz
@@ -62,6 +67,7 @@
     </div>
     <CuratorSelector
       {curatorData}
+      {curatorInfoData}
       on:curatorChange={handleCuratorChange}
       {minYear}
       {maxYear}

@@ -20,7 +20,7 @@
   const baseMaxOuterRadius =
     baseInnerRadius + (maxDisplayRings - 1) * baseRingWidth;
   const desiredCellSize = 3;
-  const scaleFactor = desiredCellSize
+  const scaleFactor = desiredCellSize / 2 / baseMaxOuterRadius;
   const innerRadius = baseInnerRadius * scaleFactor;
   const ringWidth = baseRingWidth * scaleFactor;
   const maxOuterRadius = baseMaxOuterRadius * scaleFactor;
@@ -42,17 +42,17 @@
 
       let numRings =
         currentYear >= accYear
-          ? Math.min(Math.floor((currentYear - accYear)
+          ? Math.min(Math.floor((currentYear - accYear) / 10), maxDisplayRings)
           : 0;
       let outerRadius =
         numRings > 0 ? innerRadius + (numRings - 1) * ringWidth : innerRadius;
       outerRadius = Math.min(outerRadius, maxOuterRadius);
 
-      const col = Math.floor(rawX
-      const rowGrid = Math.floor(rawY
+      const col = Math.floor(rawX / cellSize);
+      const rowGrid = Math.floor(rawY / cellSize);
       const key = `${col}-${rowGrid}`;
-      const x0 = col * cellSize + cellSize
-      const y0 = rowGrid * cellSize + cellSize
+      const x0 = col * cellSize + cellSize / 2;
+      const y0 = rowGrid * cellSize + cellSize / 2;
 
       const record = {
         accYear,
@@ -75,14 +75,14 @@
       const n = records.length;
       const totalRings = records.reduce((sum, r) => sum + r.numRings, 0);
       const totalYear = records.reduce((sum, r) => sum + r.accYear, 0);
-      const avgNumRings = Math.floor(totalRings
+      const avgNumRings = Math.floor(totalRings / n);
       const avgOuterRadius = Math.min(
         avgNumRings > 0
           ? innerRadius + (avgNumRings - 1) * ringWidth
           : innerRadius,
         maxOuterRadius
       );
-      const avgYear = Math.floor(totalYear
+      const avgYear = Math.floor(totalYear / n);
       const allPlantIDs = records.map((r) => r.plantID);
 
       aggregatedNodes.push({
@@ -106,7 +106,7 @@
 
     zoom = d3
       .zoom()
-      .scaleExtent([3, 14])
+      .scaleExtent([2, 14])
       .on("zoom", (event) => {
         transform = event.transform;
       });
@@ -116,8 +116,8 @@
     const svgWidth = svg.clientWidth;
     const svgHeight = svg.clientHeight;
     const initialScale = 2;
-    const tx = svgWidth
-    const ty = svgHeight
+    const tx = svgWidth / 2 - initialScale * (svgWidth / 2.8);
+    const ty = svgHeight / 2 - initialScale * (svgHeight / 2.2);
     const initialTransform = d3.zoomIdentity
       .translate(tx, ty)
       .scale(initialScale);
@@ -148,29 +148,29 @@
   }
 
   const clusterColorMapping = {
-    "1870s": "#FF00F0", 
-    "1880s": "#E600F5", 
-    "1890s": "#CC00F8", 
-    "1900s": "#B000F8", 
-    "1910s": "#9600F5", 
-    "1920s": "#7A00FF", 
-    "1930s": "#5F00FF", 
-    "1940s": "#4400FF", 
-    "1950s": "#2A00FF", 
-    "1960s": "#1000FF", 
-    "1970s": "#0070FF", 
-    "1980s": "#0090FF", 
-    "1990s": "#00B0FF", 
-    "2000s": "#00CCFF", 
-    "2010s": "#00E5FF", 
-    
-    Unknown: "#D0D0D0", 
+    "1870s": "#FF00F0", // neon magenta
+    "1880s": "#E600F5", // bright pink-purple
+    "1890s": "#CC00F8", // vivid purple
+    "1900s": "#B000F8", // strong violet
+    "1910s": "#9600F5", // bluish violet
+    "1920s": "#7A00FF", // deep purple
+    "1930s": "#5F00FF", // electric indigo
+    "1940s": "#4400FF", // royal violet
+    "1950s": "#2A00FF", // saturated blue-violet
+    "1960s": "#1000FF", // bold electric blue
+    "1970s": "#0070FF", // vivid azure
+    "1980s": "#0090FF", // clean digital blue
+    "1990s": "#00B0FF", // cool sky blue
+    "2000s": "#00CCFF", // neon turquoise
+    "2010s": "#00E5FF", // bright cyan
+    // "2020s": "#00FFFF", // icy electric blue
+    Unknown: "#D0D0D0", // neutral gray
   };
 
   function getStrokeColor(accYear) {
     if (!accYear || isNaN(accYear)) return clusterColorMapping.Unknown;
     if (accYear < 1950) return clusterColorMapping["Pre-1950"];
-    const label = `${Math.floor(accYear
+    const label = `${Math.floor(accYear / 10) * 10}s`;
     return clusterColorMapping[label] || clusterColorMapping.Unknown;
   }
 </script>

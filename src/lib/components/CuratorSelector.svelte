@@ -5,6 +5,8 @@
   export let minYear;
   export let maxYear;
   export let curatorData = [];
+  export let curatorInfoData = [];
+
   export let initialCurator = "";
 
   const dispatch = createEventDispatcher();
@@ -38,6 +40,13 @@
     return padding + ((date - minYear) / (maxYear - minYear)) * width;
   }
 
+  function getCuratorBio(name) {
+    const match = curatorInfoData.find(
+      (c) => c.Name.toLowerCase() === name.toLowerCase()
+    );
+    return match?.Information || "";
+  }
+
   const clusterColorMapping = {
     "1870s": "#FF00F0",
     "1880s": "#E600F5",
@@ -69,6 +78,7 @@
       >
         {#if curator.CuratorName === selectedCurator}
           <p class="curator-name">{curator.CuratorName}</p>
+          <p class="curator-info">{getCuratorBio(curator.CuratorName)}</p>
         {/if}
         {#if curator.PlantDates && curator.PlantDates.length > 0}
           <svg class="histogram" width="320" height="25">
@@ -104,12 +114,7 @@
                 })
                 .join(" ")}
 
-              <polyline
-                fill="none"
-                stroke="blue"
-                stroke-width="1"
-                {points}
-              />
+              <polyline fill="none" stroke="blue" stroke-width="1" {points} />
             {:else}
               {#each curator.PlantDates as pd}
                 <circle cx={dateToX(pd.Date)} cy="12" r="1" />
@@ -140,6 +145,7 @@
     right: 10px;
     top: 10px;
     background-color: #cccccc13;
+    backdrop-filter: blur(10px);
     height: 70vh;
     width: 330px;
     font-family: sans-serif;
@@ -166,6 +172,8 @@
 
   .curator-sidebar li.selected {
     background: #ddd;
+    background-color: #cccccc13;
+
     font-weight: bold;
   }
 
@@ -175,6 +183,12 @@
     font-size: 0.9em;
     text-align: center;
     width: 100%;
+  }
+
+  .curator-info {
+    font-size: 0.75em;
+    padding: 0 0.5em 0.3em;
+    color: #444;
   }
 
   .histogram {
