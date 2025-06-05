@@ -1,10 +1,9 @@
 <script>
   import { onMount } from "svelte";
-  import Header from "@components/Header.svelte";
-  import Viz from "@components/Viz.svelte";
+  import * as d3 from "d3";
 
+  import Viz from "@components/Viz.svelte";
   import CuratorSelector from "@components/CuratorSelector.svelte";
-  import { max } from "d3";
 
   let data = [];
   let curatorData = [];
@@ -13,66 +12,68 @@
   let maxYear;
   let selectedCuratorData = null;
 
+  let geoFeatures = [];
+  let projection = null;
+  let svgWidth = 1000;
+  let svgHeight = 800;
+
   onMount(async () => {
-    const res = await fetch("data/ArnArbPlantsinfo.json");
-    data = await res.json();
+    const plantRes = await fetch("data/ArnArbPlantsinfo.json");
+    data = await plantRes.json();
     minYear = Math.min(...data.map((d) => parseInt(d.ACC_YR)));
     maxYear = Math.max(...data.map((d) => parseInt(d.ACC_YR)));
     currentYear = maxYear;
 
-    const res2 = await fetch("data/Curator_Plants_Dates.json");
-    curatorData = await res2.json();
+    const curatorRes = await fetch("data/Curator_Plants_Dates.json");
+    curatorData = await curatorRes.json();
     if (curatorData.length > 0) {
       selectedCuratorData = curatorData[0];
     }
+
+    const geoRes = await fetch("map/grid_3px.geojson");
+    const geoData = await geoRes.json();
+    geoFeatures = geoData.features;
+
+    projection = d3.geoMercator().fitExtent(
+      [
+        [0, 0],
+        [svgWidth, svgHeight],
+      ],
+      { type: "FeatureCollection", features: geoFeatures }
+    );
   });
-
-  $: console.log(curatorData);
-
-  function handleYearChange(event) {
-    currentYear = +event.detail;
-  }
 
   function handleCuratorChange(event) {
     selectedCuratorData = event.detail.selectedCuratorData;
   }
 </script>
 
-{#if data.length > 0 && curatorData.length > 0}
+{#if data.length > 0 && curatorData.length > 0 && projection}
   <div class="container">
     <div class="main">
-      <!-- <Header
-        on:yearChange={handleYearChange}
+      <Viz
+        {data}
         {currentYear}
+        {selectedCuratorData}
         {minYear}
         {maxYear}
-      /> -->
-      {#if data.length > 0}
-        <Viz {data} {currentYear} {selectedCuratorData} />
-      {/if}
-    </div>
-    {#if minYear && maxYear}
-      <CuratorSelector
-        {curatorData}
-        on:curatorChange={handleCuratorChange}
-        {minYear}
-        {maxYear}
+        {projection}
       />
-    {/if}
+    </div>
+    <CuratorSelector
+      {curatorData}
+      on:curatorChange={handleCuratorChange}
+      {minYear}
+      {maxYear}
+    />
   </div>
 {/if}
 
 <style>
-  :global(body) {
-    margin: 0;
-    padding: 0;
-  }
-
   .container {
     display: flex;
     height: 100vh;
     overflow: hidden;
-    font-family: Arial, Helvetica, sans-serif;
   }
   .main {
     flex: 1;
