@@ -2,41 +2,26 @@
   import { onMount } from "svelte";
   import * as d3 from "d3";
 
-  export let xScale;
-  export let yScale;
-
-  export let transform = { x: 0, y: 0, k: 1 };
+  export let projection;
 
   let geoData = null;
   let pathGenerator = null;
-  let gContainer;
 
   onMount(async () => {
     try {
-      const response = await fetch("pixelated.geojson");
-      geoData = await response.json();
-      console.log(
-        "Loaded pixelated geojson:",
-        geoData.features.length,
-        "features"
-      );
-
-      const customProjection = d3.geoTransform({
-        point: function (lon, lat) {
-          this.stream.point(xScale(lon), yScale(lat));
-        },
-      });
-
-      pathGenerator = d3.geoPath().projection(customProjection);
+      const response = await fetch("map/grid_3px.geojson");
+      const geojson = await response.json();
+      geoData = geojson.features;
+      pathGenerator = d3.geoPath().projection(projection);
     } catch (error) {
-      console.error("Error loading pixelated.geojson", error);
+      console.error("Error loading map:", error);
     }
   });
 </script>
 
 {#if geoData && pathGenerator}
-  <g bind:this={gContainer}>
-    {#each geoData.features as feature, i (feature.id || i)}
+  <g>
+    {#each geoData as feature, i (feature.id || i)}
       <path
         d={pathGenerator(feature)}
         class={"pixel " + feature.properties.type}

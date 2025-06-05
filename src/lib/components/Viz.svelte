@@ -1,16 +1,16 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import * as d3 from "d3";
-  import BaseMap from "./BaseMap.svelte";
+  import BaseMap from "@components/BaseMap.svelte";
 
   export let data = [];
   export let currentYear;
   export let selectedCuratorData = null;
+  export let projection;
 
   let svg;
   let nodes = [];
   let highlightedNodes = [];
-  let xScale, yScale;
   let transform = d3.zoomIdentity;
   let zoom;
 
@@ -19,150 +19,109 @@
   const maxDisplayRings = 10;
   const baseMaxOuterRadius =
     baseInnerRadius + (maxDisplayRings - 1) * baseRingWidth;
-  const desiredCellSize = 4;
-  const scaleFactor = desiredCellSize / 2 / baseMaxOuterRadius;
+  const desiredCellSize = 3;
+  const scaleFactor = desiredCellSize
   const innerRadius = baseInnerRadius * scaleFactor;
   const ringWidth = baseRingWidth * scaleFactor;
   const maxOuterRadius = baseMaxOuterRadius * scaleFactor;
   const cellSize = desiredCellSize;
 
-  function computeScales() {
-    const svgWidth = svg.clientWidth;
-    const svgHeight = svg.clientHeight;
-    const xValues = data
-      .map((d) => parseFloat(d.LONGITUDE))
-      .filter((v) => !isNaN(v));
-    const yValues = data
-      .map((d) => parseFloat(d.LATITUDE))
-      .filter((v) => !isNaN(v));
-    let xMin = d3.min(xValues);
-    let xMax = d3.max(xValues);
-    let yMin = d3.min(yValues);
-    let yMax = d3.max(yValues);
-    const xMargin = (xMax - xMin) * 0.2;
-    const yMargin = (yMax - yMin) * 0.2;
-    xMin -= xMargin;
-    xMax += xMargin;
-    yMin -= yMargin;
-    yMax += yMargin;
-    xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, svgWidth]);
-    yScale = d3.scaleLinear().domain([yMin, yMax]).range([svgHeight, 0]);
-  }
-
   function computeNodes() {
-    if (!data || !svg || currentYear === undefined) return [];
-    computeScales();
+    if (!data || !svg || !projection || currentYear === undefined) return [];
 
     const gridMap = new Map();
 
     data.forEach((row, i) => {
-      const x = parseFloat(row.LONGITUDE);
-      const y = parseFloat(row.LATITUDE);
+      const lon = parseFloat(row.LONGITUDE);
+      const lat = parseFloat(row.LATITUDE);
       const accYear = parseInt(row.ACC_YR);
-      const lastDate = parseInt(row.last_date);
+      if (isNaN(lon) || isNaN(lat) || isNaN(accYear)) return;
 
-      if (isNaN(x) || isNaN(y) || isNaN(accYear)) return;
+      const [rawX, rawY] = projection([lon, lat]);
+      if (!rawX || !rawY) return;
 
-      let numRings = 0;
-      if (currentYear >= accYear) {
-        numRings = Math.floor((currentYear - accYear) / 10);
-        numRings = Math.min(numRings, maxDisplayRings);
-      }
+      let numRings =
+        currentYear >= accYear
+          ? Math.min(Math.floor((currentYear - accYear)
+          : 0;
       let outerRadius =
         numRings > 0 ? innerRadius + (numRings - 1) * ringWidth : innerRadius;
       outerRadius = Math.min(outerRadius, maxOuterRadius);
 
-      const rawX = xScale(x);
-      const rawY = yScale(y);
-
-      const col = Math.floor(rawX / cellSize);
-      const rowGrid = Math.floor(rawY / cellSize);
+      const col = Math.floor(rawX
+      const rowGrid = Math.floor(rawY
       const key = `${col}-${rowGrid}`;
-
-      const x0 = col * cellSize + cellSize / 2;
-      const y0 = rowGrid * cellSize + cellSize / 2;
+      const x0 = col * cellSize + cellSize
+      const y0 = rowGrid * cellSize + cellSize
 
       const record = {
-        plantType: row.KIND_OF_SPECIMEN_FULL,
+        accYear,
         numRings,
         outerRadius,
         plantID: row.PLANTID ? String(row.PLANTID).toLowerCase() : String(i),
+        plantType: row.KIND_OF_SPECIMEN_FULL,
       };
 
       if (!gridMap.has(key)) {
-        gridMap.set(key, {
-          x: x0,
-          y: y0,
-          records: [record],
-          count: 1,
-        });
+        gridMap.set(key, { x: x0, y: y0, records: [record] });
       } else {
-        const cell = gridMap.get(key);
-        cell.records.push(record);
-        cell.count++;
+        gridMap.get(key).records.push(record);
       }
     });
 
     const aggregatedNodes = [];
-    gridMap.forEach((cell, key) => {
+    for (const [key, cell] of gridMap.entries()) {
       const { x, y, records } = cell;
       const n = records.length;
-
-      const typeCounts = {};
-      records.forEach((rec) => {
-        typeCounts[rec.plantType] = (typeCounts[rec.plantType] || 0) + 1;
-      });
-      let avgPlantType = null;
-      let maxCount = 0;
-      for (let type in typeCounts) {
-        if (typeCounts[type] > maxCount) {
-          maxCount = typeCounts[type];
-          avgPlantType = type;
-        }
-      }
-
-      const totalRings = records.reduce((acc, rec) => acc + rec.numRings, 0);
-      let avgNumRings = Math.floor(totalRings / n);
-      let avgOuterRadius =
+      const totalRings = records.reduce((sum, r) => sum + r.numRings, 0);
+      const totalYear = records.reduce((sum, r) => sum + r.accYear, 0);
+      const avgNumRings = Math.floor(totalRings
+      const avgOuterRadius = Math.min(
         avgNumRings > 0
           ? innerRadius + (avgNumRings - 1) * ringWidth
-          : innerRadius;
-      avgOuterRadius = Math.min(avgOuterRadius, maxOuterRadius);
-
-      const allPlantIDs = records.map((rec) => rec.plantID);
+          : innerRadius,
+        maxOuterRadius
+      );
+      const avgYear = Math.floor(totalYear
+      const allPlantIDs = records.map((r) => r.plantID);
 
       aggregatedNodes.push({
         id: key,
-        x: x,
-        y: y,
+        x,
+        y,
+        avgYear,
         numRings: avgNumRings,
         outerRadius: avgOuterRadius,
-        plantType: avgPlantType,
-        count: n,
         plantIDs: allPlantIDs,
+        count: n,
       });
-    });
+    }
 
     return aggregatedNodes;
   }
 
-  onMount(() => {
+  onMount(async () => {
+    await tick();
+    if (!svg) return;
+
     zoom = d3
       .zoom()
-      .scaleExtent([2, 14])
+      .scaleExtent([3, 14])
       .on("zoom", (event) => {
         transform = event.transform;
       });
+
     d3.select(svg).call(zoom);
 
     const svgWidth = svg.clientWidth;
     const svgHeight = svg.clientHeight;
     const initialScale = 2;
-    const tx = svgWidth / 2 - initialScale * (svgWidth / 1.8);
-    const ty = svgHeight / 2 - initialScale * (svgHeight / 2.5);
+    const tx = svgWidth
+    const ty = svgHeight
     const initialTransform = d3.zoomIdentity
       .translate(tx, ty)
       .scale(initialScale);
+
     d3.select(svg).call(zoom.transform, initialTransform);
     transform = initialTransform;
   });
@@ -171,105 +130,71 @@
     nodes = computeNodes();
   }
 
-  $: if (selectedCuratorData && selectedCuratorData.PlantDates) {
-    let sortedDates = [...selectedCuratorData.PlantDates].sort(
+  $: if (selectedCuratorData?.PlantDates) {
+    const highlightNodesOrdered = [];
+    const sortedDates = [...selectedCuratorData.PlantDates].sort(
       (a, b) => a.Date - b.Date
     );
-    let highlightNodesOrdered = [];
-    sortedDates.forEach((pd) => {
-      const selectedID = String(pd.PlantID).toLowerCase();
-      const found = nodes.find(
-        (n) => n.plantIDs && n.plantIDs.includes(selectedID)
-      );
+    for (const pd of sortedDates) {
+      const id = String(pd.PlantID).toLowerCase();
+      const found = nodes.find((n) => n.plantIDs?.includes(id));
       if (found && !highlightNodesOrdered.includes(found)) {
         highlightNodesOrdered.push(found);
       }
-    });
+    }
     highlightedNodes = highlightNodesOrdered;
   } else {
     highlightedNodes = [];
   }
 
-  function getCurvePath(p1, p2, offset = 20) {
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const mx = (p1.x + p2.x) / 2;
-    const my = (p1.y + p2.y) / 2;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const ux = -dy / len;
-    const uy = dx / len;
-    const cx = mx + ux * offset;
-    const cy = my + uy * offset;
-    return `M ${p1.x} ${p1.y} Q ${cx} ${cy} ${p2.x} ${p2.y}`;
-  }
-
-  const plantTypeColors = {
-    "herb. - flower": "#C2185B", // deep rose
-    "herb. - fruit": "#AD1457", // raspberry red
-    "herb. - vegetative": "#880E4F", // dark magenta
-    seed: "#D81B60", // strong pink
-    "herb. - twig/buds": "#E91E63", // vivid pink
-    "fruit colln": "#F06292", // light pink
-    "herb. - seedling": "#EC407A", // soft rosy pink
-    bark: "#B71C1C", // deep red
+  const clusterColorMapping = {
+    "1870s": "#FF00F0", 
+    "1880s": "#E600F5", 
+    "1890s": "#CC00F8", 
+    "1900s": "#B000F8", 
+    "1910s": "#9600F5", 
+    "1920s": "#7A00FF", 
+    "1930s": "#5F00FF", 
+    "1940s": "#4400FF", 
+    "1950s": "#2A00FF", 
+    "1960s": "#1000FF", 
+    "1970s": "#0070FF", 
+    "1980s": "#0090FF", 
+    "1990s": "#00B0FF", 
+    "2000s": "#00CCFF", 
+    "2010s": "#00E5FF", 
+    
+    Unknown: "#D0D0D0", 
   };
 
-  function getStrokeColor(plantType) {
-    return plantTypeColors[plantType] || "rgb(255, 141, 1)";
+  function getStrokeColor(accYear) {
+    if (!accYear || isNaN(accYear)) return clusterColorMapping.Unknown;
+    if (accYear < 1950) return clusterColorMapping["Pre-1950"];
+    const label = `${Math.floor(accYear
+    return clusterColorMapping[label] || clusterColorMapping.Unknown;
   }
 </script>
 
 <svg bind:this={svg}>
   <g transform="translate({transform.x}, {transform.y}) scale({transform.k})">
-    <BaseMap {transform} {xScale} {yScale} />
+    <BaseMap {projection} />
     {#each nodes as node}
       <g class="node" transform="translate({node.x}, {node.y})">
-        {#if node.numRings > 0}
-          {#each Array(node.numRings) as _, i}
-            <circle
-              r={innerRadius + i * ringWidth}
-              fill="none"
-              stroke={getStrokeColor(node.plantType)}
-              class="node-ring"
-            />
-          {/each}
-        {:else}
+        {#each Array(node.numRings || 1) as _, i}
           <circle
-            r={innerRadius}
+            r={innerRadius + (node.numRings > 0 ? i * ringWidth : 0)}
             fill="none"
-            stroke={getStrokeColor(node.plantType)}
+            stroke={getStrokeColor(node.avgYear)}
+            stroke-opacity={highlightedNodes.length
+              ? highlightedNodes.includes(node)
+                ? 1
+                : 0.2
+              : 1}
             class="node-ring"
           />
-        {/if}
-      </g>
-    {/each}
-
-    {#if highlightedNodes.length > 1}
-      <g class="curator-path">
-        <defs>
-          <marker
-            id="arrowhead"
-            markerWidth="6"
-            markerHeight="4"
-            refX="3"
-            refY="2"
-            orient="auto"
-          >
-            <polygon points="0 0, 6 2, 0 4" class="arrowhead" />
-          </marker>
-        </defs>
-        {#each highlightedNodes.slice(0, highlightedNodes.length - 1) as node, i}
-          {#if highlightedNodes[i + 1]}
-            <path
-              d={getCurvePath(node, highlightedNodes[i + 1])}
-              fill="none"
-              class="curator-path-line"
-              marker-end="url(#arrowhead)"
-            />
-          {/if}
         {/each}
       </g>
-    {/if}
+    {/each}
   </g>
 </svg>
 
@@ -279,22 +204,11 @@
     height: 100vh;
   }
 
-  .node circle,
-  .curator-path path,
-  path {
+  .node circle {
     pointer-events: none;
   }
 
   .node-ring {
     stroke-width: 0.1;
-  }
-
-  .curator-path-line {
-    stroke: darkslateblue;
-    stroke-width: 0.5;
-  }
-
-  .arrowhead {
-    fill: darkslateblue;
   }
 </style>

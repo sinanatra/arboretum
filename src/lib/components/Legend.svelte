@@ -1,15 +1,17 @@
 <script>
-  export let classColorMapping;
+  // export let classColorMapping;
+  export let clusterColorMapping;
 
-  const classNames = Object.keys(classColorMapping);
+  // const classNames = Object.keys(classColorMapping);
+  const groupLabels = Object.keys(clusterColorMapping);
+
   const numRings = 20;
   const reducedBaseRadius = 10;
   const ringSpacing = 20;
 </script>
 
 <div class="legend-container">
-  <!-- Ring Age Guide -->
-  <svg
+  <!-- <svg
     class="infographic"
     preserveAspectRatio="xMidYMid meet"
     width="100%"
@@ -35,26 +37,18 @@
         </text>
       {/each}
     </g>
-  </svg>
+  </svg> -->
 
-  <!-- Color Grid Legend -->
   <div class="color-swatch-section">
-    {#each classNames as className}
+    {#each groupLabels as label}
       <div class="swatch-row">
         <div
           class="color-box"
-          style="background-color: {classColorMapping[className] ||
-            'rgb(255, 141, 1)'}"
+          style="background-color: {clusterColorMapping[label]}"
         ></div>
-        <span class="label">{className}</span>
+        <span class="label">{label}</span>
       </div>
     {/each}
-
-    <!-- Default fallback color -->
-    <div class="swatch-row">
-      <div class="color-box" style="background-color: rgb(255, 141, 1);"></div>
-      <span class="label">Other / Undefined</span>
-    </div>
   </div>
 </div>
 
@@ -66,10 +60,13 @@
     padding: 10px;
     font-size: 12px;
     color: black;
-    background-color: white;
+    /* background-color: white; */
+
     border: 1px solid #ccc;
     border-radius: 6px;
     max-width: 300px;
+    margin-top: 10px;
+
     margin-bottom: 5px;
   }
 

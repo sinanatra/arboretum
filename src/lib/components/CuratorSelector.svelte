@@ -4,7 +4,6 @@
 
   export let minYear;
   export let maxYear;
-
   export let curatorData = [];
   export let initialCurator = "";
 
@@ -39,20 +38,28 @@
     return padding + ((date - minYear) / (maxYear - minYear)) * width;
   }
 
-  const classColorMapping = {
-    "herb. - flower": "#C2185B", // deep rose
-    "herb. - fruit": "#AD1457", // raspberry red
-    "herb. - vegetative": "#880E4F", // dark magenta
-    seed: "#D81B60", // strong pink
-    "herb. - twig/buds": "#E91E63", // vivid pink
-    "fruit colln": "#F06292", // light pink
-    "herb. - seedling": "#EC407A", // soft rosy pink
-    bark: "#B71C1C", // deep red
+  const clusterColorMapping = {
+    "1870s": "#FF00F0",
+    "1880s": "#E600F5",
+    "1890s": "#CC00F8",
+    "1900s": "#B000F8",
+    "1910s": "#9600F5",
+    "1920s": "#7A00FF",
+    "1930s": "#5F00FF",
+    "1940s": "#4400FF",
+    "1950s": "#2A00FF",
+    "1960s": "#1000FF",
+    "1970s": "#0070FF",
+    "1980s": "#0090FF",
+    "1990s": "#00B0FF",
+    "2000s": "#00CCFF",
+    "2010s": "#00E5FF",
+    Unknown: "#D0D0D0",
   };
 </script>
 
 <aside class="curator-sidebar">
-  <Legend {classColorMapping} />
+  <Legend {clusterColorMapping} />
 
   <ul>
     {#each curators as curator (curator.CuratorName)}
@@ -74,9 +81,40 @@
               stroke-width="1"
             />
 
-            {#each curator.PlantDates as pd}
-              <circle cx={dateToX(pd.Date)} cy="12" r="2"> </circle>
-            {/each}
+            {#if curator.PlantDates.length > 1}
+              {@const yearCounts = curator.PlantDates.reduce((acc, pd) => {
+                const y = pd.Date;
+                acc[y] = (acc[y] || 0) + 1;
+                return acc;
+              }, {})}
+
+              {@const entries = Object.entries(yearCounts).sort(
+                (a, b) => a[0] - b[0]
+              )}
+              {@const maxCount = Math.max(
+                ...entries.map(([_, count]) => count)
+              )}
+
+              {@const points = entries
+                .map(([year, count]) => {
+                  const x = dateToX(+year);
+                  const height = 6 + (count / maxCount) * 6; // max spike height = 12px
+                  const y = 12 - height;
+                  return `${x},${y}`;
+                })
+                .join(" ")}
+
+              <polyline
+                fill="none"
+                stroke="blue"
+                stroke-width="1"
+                {points}
+              />
+            {:else}
+              {#each curator.PlantDates as pd}
+                <circle cx={dateToX(pd.Date)} cy="12" r="1" />
+              {/each}
+            {/if}
 
             <text x="10" y="8" font-size="8" fill="#333">{minYear}</text>
             <text x="310" y="8" font-size="8" fill="#333" text-anchor="end">
@@ -98,10 +136,12 @@
 
 <style>
   .curator-sidebar {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background-color: #cccccc13;
+    height: 70vh;
     width: 330px;
-    background: #f9f9f9;
-    border-right: 1px solid #ddd;
-    overflow-y: auto;
     font-family: sans-serif;
   }
 
@@ -109,11 +149,13 @@
     list-style: none;
     padding: 0;
     margin: 0;
+    overflow: auto;
+    height: 100%;
   }
 
   .curator-sidebar li {
-    /* padding: 0.5em; */
     border-bottom: 1px solid #ccc;
+    border-radius: 6px;
     cursor: pointer;
     transition: background 0.3s;
   }
@@ -137,20 +179,23 @@
 
   .histogram {
     display: block;
-    /* margin-top: 0.3em; */
   }
 
   .histogram line {
     stroke-dasharray: 3;
   }
 
+  .histogram polyline {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
   .histogram circle {
     transition: fill 0.3s;
-    fill: var(--annotation-color, darkslateblue);
   }
 
   .histogram circle:hover {
-    fill: darkblue;
+    fill: blue;
   }
 
   .histogram text {

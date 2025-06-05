@@ -1,34 +1,34 @@
 <script>
   import { onMount } from "svelte";
-  import * as d3 from "d3";
   import * as turf from "@turf/turf";
+  import * as d3 from "d3";
 
-  export let xScale;
-  export let yScale;
+  export let projection;
   export let width = window.innerWidth;
   export let height = window.innerHeight;
-
-  export let gridSize = 5;
+  export let gridSize = 50;
   export let streetBufferDistance = 5;
+  export let transform;
 
   let geoData = null;
   let gridCells = [];
   let isProcessing = false;
 
+  const pathGenerator = d3.geoPath().projection(projection);
+
   onMount(async () => {
     try {
       const response = await fetch("/map.geojson");
       geoData = await response.json();
-
-      console.log("GeoJSON loaded! Ready to process.");
+      console.log("GeoJSON loaded.");
     } catch (error) {
       console.error("Error loading map.geojson", error);
     }
   });
 
   async function generateGrid() {
-    if (!geoData || !xScale || !yScale) {
-      console.warn("Missing xScale/yScale/geoData");
+    if (!geoData || !projection) {
+      console.warn("Missing required data");
       return;
     }
 
@@ -39,42 +39,38 @@
     const rows = Math.ceil(height / gridSize);
 
     const areaFeatures = geoData.features.filter(
-      (feature) =>
-        feature.geometry.type === "Polygon" ||
-        feature.geometry.type === "MultiPolygon"
+      (f) => f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon"
     );
 
     const lineFeatures = geoData.features.filter(
-      (feature) =>
-        (feature.geometry.type === "LineString" ||
-          feature.geometry.type === "MultiLineString") &&
-        feature.properties?.highway
+      (f) =>
+        (f.geometry.type === "LineString" ||
+          f.geometry.type === "MultiLineString") &&
+        f.properties?.highway
     );
 
     const bufferedLines = lineFeatures
-      .map((feature, i) => {
+      .map((feature) => {
         try {
-          const buffered = turf.buffer(feature, streetBufferDistance, {
+          return turf.buffer(feature, streetBufferDistance, {
             units: "meters",
           });
-          buffered.id = feature.id || i;
-          return buffered;
         } catch (error) {
           console.error("Buffer error", error);
           return null;
         }
       })
-      .filter((f) => f);
-
-    console.log("Starting grid generation...");
+      .filter(Boolean);
 
     for (let col = 0; col < cols; col++) {
       for (let row = 0; row < rows; row++) {
         const x = col * gridSize;
         const y = row * gridSize;
 
-        const lon = xScale.invert(x + gridSize / 2);
-        const lat = yScale.invert(y + gridSize / 2);
+        const [lon, lat] = projection.invert([
+          x + gridSize / 2,
+          y + gridSize / 2,
+        ]);
         const pt = turf.point([lon, lat]);
 
         let cellType = null;
@@ -105,10 +101,11 @@
         }
 
         if (cellType) {
-          const lonMin = xScale.invert(x);
-          const lonMax = xScale.invert(x + gridSize);
-          const latMin = yScale.invert(y + gridSize);
-          const latMax = yScale.invert(y);
+          const [lonMin, latMax] = projection.invert([x, y]);
+          const [lonMax, latMin] = projection.invert([
+            x + gridSize,
+            y + gridSize,
+          ]);
 
           const coordinates = [
             [
@@ -127,6 +124,7 @@
               coordinates: coordinates,
             },
             properties: {
+              id: `${col}-${row}`,
               type: cellType,
             },
           };
@@ -137,33 +135,36 @@
     }
 
     isProcessing = false;
-    console.log(`Grid generated! ${gridCells.length} cells.`);
+    console.log(`Grid generated with ${gridCells.length} cells.`);
   }
 
   function exportGridAsGeoJSON() {
-    if (!gridCells.length) {
-      console.warn("No grid cells to export!");
-      return;
-    }
+    if (!gridCells.length) return;
 
     const geojson = {
       type: "FeatureCollection",
       features: gridCells,
     };
 
-    const json = JSON.stringify(geojson);
-    const blob = new Blob([json], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(geojson)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = `pixelated_grid_${gridSize}grid_${streetBufferDistance}buffer.geojson`;
+    link.download = `grid_${gridSize}px.geojson`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
     URL.revokeObjectURL(url);
-    console.log("Export complete!");
+  }
+
+  function getFill(type) {
+    if (type === "street") return "#888";
+    if (type === "park") return "#a3d9a5";
+    if (type === "water") return "#87cfff";
+    return "#ddd";
   }
 </script>
 
@@ -179,15 +180,30 @@
   </button>
 </div>
 
+<svg style="width: 100%; height: 100%;">
+  <g transform="translate({transform.x}, {transform.y}) scale({transform.k})">
+    {#each gridCells as cell (cell.properties.id)}
+      <path
+        d={pathGenerator(cell)}
+        fill={getFill(cell.properties.type)}
+        stroke="#000"
+        stroke-width="0.2"
+      />
+    {/each}
+  </g>
+</svg>
+
 {#if gridCells.length > 0}
-  <p>{gridCells.length} cells generated. Ready to export!</p>
+  <p style="position: absolute; top: 10px; left: 200px;">
+    {gridCells.length} cells generated.
+  </p>
 {/if}
 
 <style>
   .controls {
-    position: fixed;
-    top: 100px;
-    left: 1rem;
+    position: absolute;
+    top: 80px;
+    left: 10px;
     background: rgba(255, 255, 255, 0.95);
     padding: 1rem;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -199,8 +215,6 @@
     margin-bottom: 0.5rem;
     padding: 0.5rem 1rem;
     font-size: 1rem;
-    background: #444;
-    color: #fff;
     border: none;
     cursor: pointer;
   }
@@ -210,9 +224,8 @@
     cursor: not-allowed;
   }
 
-  p {
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-    color: #333;
+  svg {
+    width: 100%;
+    height: 100%;
   }
 </style>
