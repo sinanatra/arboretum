@@ -33,7 +33,7 @@
 
     const curatorBio = await fetch("data/Curatorinfo.json");
     curatorInfoData = await curatorBio.json();
-    console.log(curatorInfoData)
+    console.log(curatorInfoData);
 
     const geoRes = await fetch("map/grid_3px.geojson");
     const geoData = await geoRes.json();
@@ -76,10 +76,15 @@
 {/if}
 
 <style>
+  :global(body) {
+    margin: 0;
+  }
+
   .container {
     display: flex;
     height: 100vh;
     overflow: hidden;
+    background: #f7f7f7;
   }
   .main {
     flex: 1;

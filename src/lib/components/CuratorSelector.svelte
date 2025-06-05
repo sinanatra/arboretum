@@ -48,22 +48,22 @@
   }
 
   const clusterColorMapping = {
-    "1870s": "#FF00F0",
-    "1880s": "#E600F5",
-    "1890s": "#CC00F8",
-    "1900s": "#B000F8",
-    "1910s": "#9600F5",
-    "1920s": "#7A00FF",
-    "1930s": "#5F00FF",
-    "1940s": "#4400FF",
-    "1950s": "#2A00FF",
-    "1960s": "#1000FF",
-    "1970s": "#0070FF",
-    "1980s": "#0090FF",
-    "1990s": "#00B0FF",
-    "2000s": "#00CCFF",
-    "2010s": "#00E5FF",
-    Unknown: "#D0D0D0",
+    "1870s": "#154406", // deep forest green
+    "1880s": "#2E5912",
+    "1890s": "#4A6F1D",
+    "1900s": "#67862A",
+    "1910s": "#839E38",
+    "1920s": "#9FB748", // olive/lime
+    "1930s": "#BCCF5A",
+    "1940s": "#DAC86A", // fading green to gold
+    "1950s": "#F5B94F", // goldenrod
+    "1960s": "#E0963C", // pumpkin orange
+    "1970s": "#C06B2B", // burnt orange
+    "1980s": "#A34826", // rust
+    "1990s": "#883421", // clay
+    "2000s": "#6E241D", // reddish brown
+    "2010s": "#541916", // dark bark red
+    Unknown: "#A0A0A0", // neutral gray for unknown
   };
 </script>
 
@@ -144,11 +144,12 @@
     position: absolute;
     right: 10px;
     top: 10px;
-    background-color: #cccccc13;
-    backdrop-filter: blur(10px);
-    height: 70vh;
+    backdrop-filter: blur(5px);
     width: 330px;
+    overflow-y: scroll;
+    max-height: 98%;
     font-family: sans-serif;
+    background-color: rgba(255,255, 255, 0.6);
   }
 
   .curator-sidebar ul {
@@ -166,15 +167,10 @@
     transition: background 0.3s;
   }
 
-  .curator-sidebar li:hover {
-    background: #eee;
-  }
-
   .curator-sidebar li.selected {
-    background: #ddd;
-    background-color: #cccccc13;
-
-    font-weight: bold;
+    /* background: #ddd; */
+    /* background-color: #cccccc13; */
+    padding-top: 10px;
   }
 
   .curator-name {

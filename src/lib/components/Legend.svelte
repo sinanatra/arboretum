@@ -60,12 +60,11 @@
     padding: 10px;
     font-size: 12px;
     color: black;
-    /* background-color: white; */
 
     border: 1px solid #ccc;
     border-radius: 6px;
-    max-width: 300px;
-    margin-top: 10px;
+    /* max-width: 300px; */
+    /* margin-top: 10px; */
 
     margin-bottom: 5px;
   }

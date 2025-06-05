@@ -9,7 +9,7 @@
 
   onMount(async () => {
     try {
-      const response = await fetch("map/grid_3px.geojson");
+      const response = await fetch("map/grid_5px.geojson");
       const geojson = await response.json();
       geoData = geojson.features;
       pathGenerator = d3.geoPath().projection(projection);
@@ -37,6 +37,7 @@
   }
   path.pixel.park {
     fill: #f1f1f1;
+    fill: white;
   }
   path.pixel.water {
     fill: #e0efff;
@@ -45,6 +46,6 @@
     fill: #dddddd;
   }
   path.pixel.street {
-    fill: #f8f8f8;
+    fill: rgba(238, 238, 238, 0.564);
   }
 </style>
