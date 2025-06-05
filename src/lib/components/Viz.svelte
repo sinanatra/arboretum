@@ -14,17 +14,17 @@
   let transform = d3.zoomIdentity;
   let zoom;
 
+  const cellSize = 4;
+  const maxDisplayRings = 10;
   const baseInnerRadius = 1;
   const baseRingWidth = 1;
-  const maxDisplayRings = 10;
   const baseMaxOuterRadius =
     baseInnerRadius + (maxDisplayRings - 1) * baseRingWidth;
-  const desiredCellSize = 3;
-  const scaleFactor = desiredCellSize / 2 / baseMaxOuterRadius;
+
+  const scaleFactor = cellSize / 2 / baseMaxOuterRadius;
   const innerRadius = baseInnerRadius * scaleFactor;
   const ringWidth = baseRingWidth * scaleFactor;
   const maxOuterRadius = baseMaxOuterRadius * scaleFactor;
-  const cellSize = desiredCellSize;
 
   function computeNodes() {
     if (!data || !svg || !projection || currentYear === undefined) return [];
@@ -40,26 +40,25 @@
       const [rawX, rawY] = projection([lon, lat]);
       if (!rawX || !rawY) return;
 
-      let numRings =
-        currentYear >= accYear
-          ? Math.min(Math.floor((currentYear - accYear) / 10), maxDisplayRings)
-          : 0;
-      let outerRadius =
-        numRings > 0 ? innerRadius + (numRings - 1) * ringWidth : innerRadius;
-      outerRadius = Math.min(outerRadius, maxOuterRadius);
-
       const col = Math.floor(rawX / cellSize);
       const rowGrid = Math.floor(rawY / cellSize);
       const key = `${col}-${rowGrid}`;
       const x0 = col * cellSize + cellSize / 2;
       const y0 = rowGrid * cellSize + cellSize / 2;
 
+      let numRings =
+        currentYear >= accYear
+          ? Math.min(Math.floor((currentYear - accYear) / 10), maxDisplayRings)
+          : 0;
+
+      const outerRadius =
+        numRings > 0 ? innerRadius + (numRings - 1) * ringWidth : innerRadius;
+
       const record = {
         accYear,
         numRings,
         outerRadius,
         plantID: row.PLANTID ? String(row.PLANTID).toLowerCase() : String(i),
-        plantType: row.KIND_OF_SPECIMEN_FULL,
       };
 
       if (!gridMap.has(key)) {
@@ -148,28 +147,26 @@
   }
 
   const clusterColorMapping = {
-    "1870s": "#FF00F0", // neon magenta
-    "1880s": "#E600F5", // bright pink-purple
-    "1890s": "#CC00F8", // vivid purple
-    "1900s": "#B000F8", // strong violet
-    "1910s": "#9600F5", // bluish violet
-    "1920s": "#7A00FF", // deep purple
-    "1930s": "#5F00FF", // electric indigo
-    "1940s": "#4400FF", // royal violet
-    "1950s": "#2A00FF", // saturated blue-violet
-    "1960s": "#1000FF", // bold electric blue
-    "1970s": "#0070FF", // vivid azure
-    "1980s": "#0090FF", // clean digital blue
-    "1990s": "#00B0FF", // cool sky blue
-    "2000s": "#00CCFF", // neon turquoise
-    "2010s": "#00E5FF", // bright cyan
-    // "2020s": "#00FFFF", // icy electric blue
-    Unknown: "#D0D0D0", // neutral gray
+    "1870s": "#154406",
+    "1880s": "#2E5912",
+    "1890s": "#4A6F1D",
+    "1900s": "#67862A",
+    "1910s": "#839E38",
+    "1920s": "#9FB748",
+    "1930s": "#BCCF5A",
+    "1940s": "#DAC86A",
+    "1950s": "#F5B94F",
+    "1960s": "#E0963C",
+    "1970s": "#C06B2B",
+    "1980s": "#A34826",
+    "1990s": "#883421",
+    "2000s": "#6E241D",
+    "2010s": "#541916",
+    Unknown: "#A0A0A0",
   };
 
   function getStrokeColor(accYear) {
     if (!accYear || isNaN(accYear)) return clusterColorMapping.Unknown;
-    if (accYear < 1950) return clusterColorMapping["Pre-1950"];
     const label = `${Math.floor(accYear / 10) * 10}s`;
     return clusterColorMapping[label] || clusterColorMapping.Unknown;
   }
@@ -188,7 +185,7 @@
             stroke-opacity={highlightedNodes.length
               ? highlightedNodes.includes(node)
                 ? 1
-                : 0.2
+                : 0.4
               : 1}
             class="node-ring"
           />
@@ -209,6 +206,6 @@
   }
 
   .node-ring {
-    stroke-width: 0.1;
+    stroke-width: 0.4;
   }
 </style>
