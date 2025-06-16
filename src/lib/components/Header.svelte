@@ -1,42 +1,31 @@
-<script>
-  import { createEventDispatcher } from "svelte";
-
-  const dispatch = createEventDispatcher();
-  export let currentYear;
-  export let minYear;
-  export let maxYear;
-
-  function handleYearChange(event) {
-    dispatch("yearChange", event.target.value);
-  }
-</script>
-
-<div class="header">
-  <input
-    type="range"
-    min={minYear}
-    max={maxYear}
-    bind:value={currentYear}
-    on:input={handleYearChange}
-  />
-  <span>{currentYear}</span>
-</div>
+<section>
+  <h1>The Living Library of Trees</h1>
+  <p>
+    The project visualizes the intertwined histories of plants and experts at
+    the Arnold Arboretum. Drawing on centuries of archival material, the project
+    combines close reading with deep learning to explore how knowledge has
+    circulated through this living museum. By mapping the interconnected
+    biographies of trees and curators, the interactive platform invites
+    audiences to find their own path through the Arboretum and discover stories
+    of infrastructure, care, and interspecies affinities.
+  </p>
+  <p>
+    A research project by <a
+      href="https://mlml.io/p/arnold-arboretum/"
+      target="_blank">metaLAB</a
+    >
+  </p>
+</section>
 
 <style>
-  .header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
-    gap: 10px;
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 100;
+  h1 {
+    font-size: 2.5em;
+    font-weight: 400;
+    margin: 0;
+    padding: 0;
   }
 
-  input[type="range"] {
-    width: 200px;
-    margin: 0 10px;
+  p {
+    font-size: 1.25em;
   }
 </style>
