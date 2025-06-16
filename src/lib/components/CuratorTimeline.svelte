@@ -152,7 +152,7 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    padding-top: 40px;
+    padding-top: 10px;
   }
 
   li {
@@ -167,7 +167,7 @@
   
   .curator-description {
     font-size: .8em;
-    border-top: 1px solid;
+    /* border-top: 1px solid; */
     padding-top: 1em;
   }
 
