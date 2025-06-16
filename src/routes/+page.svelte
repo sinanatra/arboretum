@@ -3,7 +3,7 @@
   import * as d3 from "d3";
 
   import Viz from "@components/Viz.svelte";
-  import CuratorSelector from "@components/CuratorSelector.svelte";
+  import Panel from "@components/Panel.svelte";
 
   let data = [];
   let curatorData = [];
@@ -28,7 +28,7 @@
     const curatorRes = await fetch("data/Curator_Plants_Dates.json");
     curatorData = await curatorRes.json();
     if (curatorData.length > 0) {
-      selectedCuratorData = curatorData[0];
+      selectedCuratorData = curatorData;
     }
 
     const curatorBio = await fetch("data/Curatorinfo.json");
@@ -65,7 +65,7 @@
         {projection}
       />
     </div>
-    <CuratorSelector
+    <Panel
       {curatorData}
       {curatorInfoData}
       on:curatorChange={handleCuratorChange}
@@ -76,10 +76,6 @@
 {/if}
 
 <style>
-  :global(body) {
-    margin: 0;
-  }
-
   .container {
     display: flex;
     height: 100vh;

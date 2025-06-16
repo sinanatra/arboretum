@@ -56,52 +56,35 @@
   .legend-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 10px;
-    font-size: 12px;
+    padding: 6px;
+    font-size: 10px;
     color: black;
-
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    /* max-width: 300px; */
-    /* margin-top: 10px; */
-
-    margin-bottom: 5px;
-  }
-
-  .infographic {
-    width: 100%;
-    height: auto;
   }
 
   .color-swatch-section {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px 10px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px 5px;
   }
 
   .swatch-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
   .color-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 1px;
     border: 1px solid #555;
     flex-shrink: 0;
   }
 
   .label {
-    font-size: 12px;
+    font-size: 10px;
     color: #333;
     flex: 1;
     word-break: break-word;
-  }
-
-  text {
-    fill: black;
   }
 </style>
