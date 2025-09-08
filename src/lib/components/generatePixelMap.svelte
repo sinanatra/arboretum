@@ -18,7 +18,7 @@
 
   onMount(async () => {
     try {
-      const response = await fetch("/map.geojson");
+      const response = await fetch("map.geojson");
       geoData = await response.json();
       console.log("GeoJSON loaded.");
     } catch (error) {
