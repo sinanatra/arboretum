@@ -1,7 +1,7 @@
 # Harvard Arboretum
 
 App repository: [`sinanatra/arboretum`](https://github.com/sinanatra/arboretum).
-`main` contains the current app; `dev` remains available for development.
+`main` contains the current app and is the active development branch.
 
 ## Data
 

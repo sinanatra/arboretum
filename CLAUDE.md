@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 "Living Library of Trees" — a metaLAB visualization of Arnold Arboretum plants and the curators who annotated them. SvelteKit 2 + Svelte 4 (not runes: uses `export let`, `$:`, `createEventDispatcher`), D3 for projection/zoom, fully static (prerendered, `adapter-static`), deployed to GitHub Pages.
 
 The canonical app repository (`origin`) is `sinanatra/arboretum`.
-`main` contains the current app; `dev` remains available for development.
+`main` contains the current app and is the active development branch.
 
 ## Commands
 
