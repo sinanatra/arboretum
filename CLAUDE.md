@@ -14,13 +14,13 @@ The canonical app repository (`origin`) is `sinanatra/arboretum`.
 ```bash
 npm install
 npm run dev                          # dev server
-BASE_PATH=/arboretum npm run build   # static build into build/
+npm run build                        # static build into docs/ for /arboretum
 npm run preview
 npm test                             # node tests in scripts/
 npm run sync:data                    # refresh static/data from ../arboretum-data
 ```
 
-- `svelte.config.js` sets `paths.base` from `process.env.BASE_PATH` for non-dev builds; set it to the GitHub Pages sub-path (e.g. `/arboretum`) when building for deploy.
+- `svelte.config.js` defaults production `paths.base` to `/arboretum`; `BASE_PATH` overrides it. The static adapter writes pages and assets into tracked `docs/`. GitHub Pages publishes `main:/docs`. Rebuild and commit `docs/` with source updates. Generated `docs/data/` JSON is public; the pipeline stays in the private data repository.
 - Map calculation audit: `node scripts/audit_visualization.mjs`. Its report goes to git-ignored `reports/`. No linter or type-checking is configured.
 - Both `package-lock.json` and `yarn.lock` are committed; `.npmrc` sets `engine-strict=true`.
 

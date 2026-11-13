@@ -19,8 +19,9 @@ npm run sync:data   # from ../arboretum-data; pass another path after --
 `npm test` fails if the copy has been edited. Development and production
 builds sync automatically and require the data checkout. To use another
 location for automatic syncing, set `ARBORETUM_DATA_DIR=/path/to/arboretum-data`.
-Only the data repository versions the outputs; the app has no second
-committed copy. Built website assets include the JSON needed by the browser.
+The data repository is the source of truth. The published `docs/data/`
+folder contains a committed snapshot of the JSON needed by the browser;
+rebuild the app to refresh it. The pipeline and raw inputs stay separate.
 
 ## Developing
 
@@ -39,25 +40,31 @@ npm run dev
 npm run dev -- --open
 ```
 
-## Building
+## Building and publishing
 
-To create a production version of your app:
+Build the working website into `docs/`:
 
 ```bash
 npm run build
+npm run preview
 ```
 
-For GitHub Pages hosted under `/arboretum`, build with that base path:
+Production builds default to the GitHub Pages path `/arboretum`.
+Override it with `BASE_PATH` when publishing somewhere else.
+The build syncs the committed outputs from `../arboretum-data`, prepares
+map geometry, and replaces `docs/`. Do not edit generated files in `docs/`.
+
+Commit and push `docs/` together with the source changes to publish an update:
 
 ```bash
-BASE_PATH=/arboretum npm run build
+git add docs
+git commit -m "Update published website"
+git push origin main
 ```
 
-You can preview the production build with `npm run preview`.
-
-The existing `gh-pages` branch contains the legacy published site. Publishing
-a new build makes its JSON assets public. Use a Pages artifact deployment
-for future builds so generated datasets stay out of Git history.
+GitHub Pages should use **Deploy from a branch**, branch **main**, folder
+**/docs**. `docs/.nojekyll` preserves the generated `_app` assets.
+The generated JSON is public and versioned as part of the published website.
 
 
 ```
