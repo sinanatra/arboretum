@@ -1,0 +1,10 @@
+{
+  "repository": "rodighiero/arboretum-data",
+  "commit": "bcd61e02c9cc01f31c06cb5267ea70e6b9396271",
+  "committed": "2026-11-13T08:51:52-05:00",
+  "files": {
+    "plants.json": "c1a63838b355bc29396c016be188dc9e9dc16443f447ada1728107ae1fe8c967",
+    "relations.json": "0277567477fa1d08d44193b2c4b7e43de24b9cd0d95c6b95a4f345d17d8b2c10",
+    "curators.json": "f0f1fb77a7686c70feef1c67ba1ba2e729a3508abab75df796d11090f5e92e97"
+  }
+}

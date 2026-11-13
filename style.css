@@ -1,24 +1,98 @@
+:root {
+  --text-sm: 14px; /* labels, legends, controls */
+  --text-xs: 12.5px; /* axis ticks, counts, notes */
+  --leading: 1.35; /* running text */
+  --leading-tight: 1.1; /* headings, single-line labels */
+  --accent: green;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   font-family: CrimsonPro-Light, "Times New Roman", Times, serif;
   font-size: 18px;
-  line-height: 0.9;
-  text-rendering: geometricPrecision;
-  /* hyphens: auto; */
+  line-height: var(--leading);
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #1a1a1a;
+}
+
+/* ---- text ---- */
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 400;
+  line-height: var(--leading-tight);
   text-wrap: balance;
 }
 
-h1 {
-  line-height: 1em;
+p {
+  margin: 0 0 0.6em;
+  text-wrap: pretty; /* avoid single-word last lines */
+}
+
+p:last-child {
+  margin-bottom: 0;
 }
 
 a {
-  color: green;
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
 }
 
 ::selection {
-  background-color: green;
-  color: black;
+  background-color: var(--accent);
+  color: white;
+}
+
+/* ---- controls ---- */
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button,
+select,
+summary,
+label,
+input[type="checkbox"],
+input[type="radio"],
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input:disabled {
+  cursor: not-allowed;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
 }
 
 @font-face {
@@ -30,4 +104,3 @@ a {
   font-display: swap;
   font-style: normal;
 }
-
