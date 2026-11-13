@@ -1,7 +1,9 @@
 <script>
   import { onMount } from "svelte";
-  import GeneratePixelMap from "@components/GeneratePixelMap.svelte";
+  import GeneratePixelMap from "@components/generatePixelMap.svelte";
   import * as d3 from "d3";
+  import { base } from "$app/paths";
+  import { fetchJson } from "@lib/data.js";
 
   let data = [];
   let svg;
@@ -11,9 +13,7 @@
 
   onMount(async () => {
     try {
-      const res = await fetch("data/ArnArbPlantsinfo.json");
-      const text = await res.text();
-      data = JSON.parse(text);
+      data = await fetchJson(`${base}/data/plants.json`);
 
       computeProjection();
 

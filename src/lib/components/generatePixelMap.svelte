@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import * as turf from "@turf/turf";
   import * as d3 from "d3";
+  import { base } from "$app/paths";
+  import { fetchJson } from "@lib/data.js";
 
   export let projection;
   export let width = window.innerWidth;
@@ -18,9 +20,7 @@
 
   onMount(async () => {
     try {
-      const response = await fetch("map.geojson");
-      geoData = await response.json();
-      console.log("GeoJSON loaded.");
+      geoData = await fetchJson(`${base}/map.geojson`);
     } catch (error) {
       console.error("Error loading map.geojson", error);
     }
@@ -135,7 +135,6 @@
     }
 
     isProcessing = false;
-    console.log(`Grid generated with ${gridCells.length} cells.`);
   }
 
   function exportGridAsGeoJSON() {

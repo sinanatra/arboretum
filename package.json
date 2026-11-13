@@ -3,13 +3,16 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "prepare:map": "node scripts/prepare_map.mjs",
+    "sync:data": "node scripts/sync_data.mjs",
+    "predev": "npm run sync:data && npm run prepare:map",
+    "prebuild": "npm run sync:data && npm run prepare:map",
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "gh-pages -d build -t true"
+    "test": "node --test scripts/test_*.mjs"
   },
   "devDependencies": {
-    "@sveltejs/adapter-auto": "^3.0.0",
     "@sveltejs/kit": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "svelte": "^4.2.7",
@@ -20,8 +23,6 @@
     "@sveltejs/adapter-static": "^3.0.1",
     "@turf/turf": "^7.2.0",
     "d3": "^7.9.0",
-    "d3-dsv": "^3.0.1",
-    "gh-pages": "^6.1.1",
-    "leaflet": "^1.9.4"
+    "gh-pages": "^6.1.1"
   }
 }

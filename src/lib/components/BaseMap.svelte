@@ -1,34 +1,15 @@
 <script>
-  import { onMount } from "svelte";
-  import * as d3 from "d3";
-
-  export let projection;
-
-  let geoData = null;
-  let pathGenerator = null;
-
-  onMount(async () => {
-    try {
-      const response = await fetch("map/grid_5px.geojson");
-      const geojson = await response.json();
-      geoData = geojson.features;
-      pathGenerator = d3.geoPath().projection(projection);
-    } catch (error) {
-      console.error("Error loading map:", error);
-    }
-  });
+  export let paths = [];
 </script>
 
-{#if geoData && pathGenerator}
   <g>
-    {#each geoData as feature, i (feature.id || i)}
+    {#each paths as path (path.type)}
       <path
-        d={pathGenerator(feature)}
-        class={"pixel " + feature.properties.type}
+        d={path.d}
+        class={"pixel " + path.type}
       />
     {/each}
   </g>
-{/if}
 
 <style>
   path.pixel {
@@ -36,7 +17,6 @@
     pointer-events: none;
   }
   path.pixel.park {
-    fill: #f1f1f1;
     fill: white;
   }
   path.pixel.water {

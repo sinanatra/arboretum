@@ -1,44 +1,34 @@
 <script>
-  // export let classColorMapping;
-  export let clusterColorMapping;
-
-  // const classNames = Object.keys(classColorMapping);
-  const groupLabels = Object.keys(clusterColorMapping);
-
-  const numRings = 20;
-  const reducedBaseRadius = 10;
-  const ringSpacing = 20;
+  export let items = []; // [{ label, color }]
+  export let explanation = "";
 </script>
 
 <div class="legend-container">
   <div class="color-swatch-section">
-    {#each groupLabels as label}
+    <details>
+      <summary>About dot colors</summary>
+      <p>{explanation}</p>
+      <p>Selecting a curator highlights whole dots. Their colors and sizes still describe all plant records in each dot.</p>
+    </details>
+    {#each items as item (item.label)}
       <div class="swatch-row">
-        <span class="label">{label}</span>
-
-        <div
-          class="color-box"
-          style="background-color: {clusterColorMapping[label]}"
-        ></div>
+        <div class="color-box" style="background-color: {item.color}"></div>
+        <span class="label">{item.label}</span>
       </div>
     {/each}
   </div>
 </div>
 
 <style>
+  details { max-width: 180px; margin-bottom: 6px; }
+  details p { line-height: 1.4; }
   .legend-container {
     display: flex;
     flex-direction: row-reverse;
     padding: 6px;
     font-size: 10px;
     color: black;
-    text-align: right;
-  }
-
-  .color-swatch-section {
-    /* display: grid;
-    grid-template-columns: repeat(4, 1fr); */
-    gap: 1px 5px;
+    text-align: left;
   }
 
   .swatch-row {

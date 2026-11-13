@@ -8,3 +8,10 @@ node_modules
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# private outputs; the raw BG-BASE export belongs in arboretum-data, never here
+/raw-data/
+/reports/
+
+# Synced locally from the private arboretum-data repository
+/static/data/
